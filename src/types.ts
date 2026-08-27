@@ -11,8 +11,8 @@ export const MODULE_META: Record<
     color: "from-violet-500 to-indigo-500",
   },
   circles: {
-    name: "圈層控制",
-    short: "分清楚什麼歸你管",
+    name: "目標控制",
+    short: "分清楚什麼該放管",
     icon: "🎯",
     color: "from-emerald-500 to-teal-500",
   },
@@ -23,11 +23,18 @@ export const MODULE_META: Record<
     color: "from-amber-500 to-orange-500",
   },
   sos: {
-    name: "應急與能量",
+    name: "感受與能量",
     short: "立刻讓自己穩下來",
     icon: "🫁",
     color: "from-sky-500 to-cyan-500",
   },
+};
+
+export const MODULE_ROUTES: Record<ModuleId, string> = {
+  reframe: "/modules/reframe",
+  circles: "/modules/circles",
+  tolerance: "/modules/tolerance",
+  sos: "/sos",
 };
 
 export interface CheckIn {
@@ -107,10 +114,13 @@ export interface BadgeDef {
 
 export type AppMode = "lite" | "pro";
 
+export type AIProvider = "anthropic" | "google" | "nvidia";
+
 export interface Settings {
   mode: AppMode;
-  apiKey: string;
-  model: string;
+  provider: AIProvider;
+  apiKeys: Record<AIProvider, string>;
+  models: Record<AIProvider, string>;
   name: string;
 }
 

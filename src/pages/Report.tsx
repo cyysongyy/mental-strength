@@ -10,7 +10,7 @@ import {
   useWeeklyReports,
 } from "../lib/storage";
 import { BADGES, computeStreak, computeUnlockedBadges } from "../lib/badges";
-import { generateWeeklyReport } from "../lib/claude";
+import { generateWeeklyReport, hasActiveApiKey } from "../lib/ai";
 import { renderLiteMarkdown } from "../lib/markdown";
 import { MODULE_META, type ModuleId } from "../types";
 
@@ -123,11 +123,7 @@ function ProReport() {
     setLoading(true);
     setError("");
     try {
-      const content = await generateWeeklyReport(
-        settings.apiKey,
-        settings.model,
-        summarizeLogsForAI(logs),
-      );
+      const content = await generateWeeklyReport(settings, summarizeLogsForAI(logs));
       add({
         id: uid(),
         timestamp: Date.now(),
@@ -141,7 +137,7 @@ function ProReport() {
     }
   }
 
-  if (!settings.apiKey) return <NeedsApiKeyNotice />;
+  if (!hasActiveApiKey(settings)) return <NeedsApiKeyNotice />;
 
   return (
     <div className="space-y-5">
@@ -189,7 +185,7 @@ export default function Report() {
   return (
     <div className="space-y-5">
       <header className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-slate-900 dark:text-white">📊 訓練反饋與週報</h1>
+        <h1 className="text-xl font-bold text-slate-900 dark:text-white">📊 紀錄</h1>
         <ModeBadge mode={settings.mode} />
       </header>
       {settings.mode === "pro" ? <ProReport /> : <LiteReport />}

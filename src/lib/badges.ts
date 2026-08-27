@@ -27,8 +27,8 @@ export const BADGES: BadgeDef[] = [
   },
   {
     id: "circles-5",
-    name: "圈層掌控者",
-    description: "完成 5 次圈層控制練習",
+    name: "目標掌控者",
+    description: "完成 5 次目標控制練習",
     icon: "🎯",
   },
   {

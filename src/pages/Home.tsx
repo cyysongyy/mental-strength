@@ -3,6 +3,15 @@ import { useNavigate } from "react-router-dom";
 import Slider from "../components/Slider";
 import { Card, PrimaryButton, SectionTitle } from "../components/Card";
 import ModeBadge from "../components/ModeBadge";
+import { ModuleCard } from "../components/ModuleCard";
+import {
+  HeroLandscape,
+  HeartCloudIcon,
+  SproutIcon,
+  LeafAccent,
+  MountainBadgeIcon,
+  CompassBadgeIcon,
+} from "../components/Illustrations";
 import {
   todayStr,
   uid,
@@ -10,7 +19,7 @@ import {
   useModuleLogs,
   useSettings,
 } from "../lib/storage";
-import { MODULE_META, type ModuleId } from "../types";
+import { MODULE_META, MODULE_ROUTES, type ModuleId } from "../types";
 import { computeStreak, computeUnlockedBadges, BADGES } from "../lib/badges";
 
 function recommendModule(stress: number, control: number): ModuleId {
@@ -57,12 +66,12 @@ export default function Home() {
   }
 
   function goToModule(id: ModuleId) {
-    navigate(id === "sos" ? "/sos" : `/modules/${id}`);
+    navigate(MODULE_ROUTES[id]);
   }
 
   return (
     <div className="space-y-5">
-      <header className="flex items-center justify-between">
+      <header className="flex items-start justify-between">
         <div>
           <p className="text-sm text-slate-500 dark:text-slate-400">
             {new Date().toLocaleDateString("zh-TW", {
@@ -71,12 +80,20 @@ export default function Home() {
               weekday: "long",
             })}
           </p>
-          <h1 className="text-xl font-bold text-slate-900 dark:text-white">
+          <h1 className="text-2xl font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
             心理肌肉鍛鍊{settings.name ? `，${settings.name}` : ""}
+            <LeafAccent className="w-7 h-5" />
           </h1>
+          <p className="font-script text-xl text-violet-500 dark:text-violet-300 -mt-1 whitespace-nowrap">
+            Stronger Mind, Better You.
+          </p>
         </div>
         <ModeBadge mode={settings.mode} />
       </header>
+
+      <div className="rounded-3xl overflow-hidden shadow-sm h-32">
+        <HeroLandscape className="w-full h-full" />
+      </div>
 
       {streak > 0 && (
         <div className="flex items-center gap-2 text-sm text-orange-600 dark:text-orange-400 font-medium">
@@ -102,6 +119,9 @@ export default function Home() {
             onChange={setStress}
             lowLabel="很平靜"
             highLabel="快撐不住"
+            icon={<MountainBadgeIcon className="w-5 h-5" />}
+            iconBg="bg-rose-100 text-rose-500 dark:bg-rose-500/20 dark:text-rose-300"
+            decoration={<HeartCloudIcon className="w-11 h-7" />}
           />
           <Slider
             label="掌控感"
@@ -110,9 +130,13 @@ export default function Home() {
             onChange={setControl}
             lowLabel="完全失控"
             highLabel="完全掌控"
+            icon={<CompassBadgeIcon className="w-5 h-5" />}
+            iconBg="bg-lime-100 text-lime-600 dark:bg-lime-500/20 dark:text-lime-300"
+            decoration={<SproutIcon className="w-11 h-7" />}
           />
-          <PrimaryButton onClick={handleSubmit} className="w-full">
-            完成快測
+          <PrimaryButton onClick={handleSubmit} className="w-full flex items-center justify-center gap-2">
+            <span>✨ 完成快測</span>
+            <span>→</span>
           </PrimaryButton>
         </Card>
       ) : activeResult ? (
@@ -161,22 +185,20 @@ export default function Home() {
         </Card>
       ) : null}
 
-      <Card>
-        <SectionTitle title="四大訓練模組" subtitle="也可以隨時自由選擇想練習的模組" />
+      <div>
+        <div className="flex items-center gap-1.5 mb-1">
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">四大訓練模組</h2>
+          <LeafAccent className="w-6 h-4" />
+        </div>
+        <p className="text-sm text-slate-500 dark:text-slate-400 mb-3">
+          也可以隨時自由選擇想練習的模組
+        </p>
         <div className="grid grid-cols-2 gap-3">
           {(Object.keys(MODULE_META) as ModuleId[]).map((id) => (
-            <button
-              key={id}
-              onClick={() => goToModule(id)}
-              className={`rounded-xl p-3 text-left bg-gradient-to-br ${MODULE_META[id].color} text-white`}
-            >
-              <div className="text-2xl">{MODULE_META[id].icon}</div>
-              <div className="font-semibold mt-1">{MODULE_META[id].name}</div>
-              <div className="text-xs opacity-85 mt-0.5">{MODULE_META[id].short}</div>
-            </button>
+            <ModuleCard key={id} id={id} compact />
           ))}
         </div>
-      </Card>
+      </div>
     </div>
   );
 }

@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Card, GhostButton, PrimaryButton, SectionTitle } from "../../components/Card";
 import ModeBadge, { NeedsApiKeyNotice } from "../../components/ModeBadge";
 import { uid, useModuleLogs, useSettings } from "../../lib/storage";
-import { planMicroExposure } from "../../lib/claude";
+import { hasActiveApiKey, planMicroExposure } from "../../lib/ai";
 import { MODULE_META } from "../../types";
 
 const CHECKLIST = [
@@ -163,7 +163,7 @@ function ProTolerance({ onDone }: { onDone: () => void }) {
     setLoading(true);
     setError("");
     try {
-      const p = await planMicroExposure(settings.apiKey, settings.model, fear);
+      const p = await planMicroExposure(settings, fear);
       setPlan(p);
       add({
         type: "tolerance",
@@ -182,7 +182,7 @@ function ProTolerance({ onDone }: { onDone: () => void }) {
     }
   }
 
-  if (!settings.apiKey) return <NeedsApiKeyNotice />;
+  if (!hasActiveApiKey(settings)) return <NeedsApiKeyNotice />;
 
   return (
     <Card className="space-y-4">

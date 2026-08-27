@@ -33,6 +33,23 @@
         var POLL_INTERVAL_MS = 500;
         var RETRY_KEY = "ms_reload_retry";
         var startedAt = Date.now();
+
+        // A React render error with no error boundary above it unmounts the
+        // whole tree, leaving #root empty just like a failed script load -
+        // so the fallback below has no way to tell those apart on its own.
+        // Record the first real error/rejection here so that if the
+        // fallback does end up showing, it can display what actually broke
+        // instead of a generic message.
+        var lastError = "";
+        window.addEventListener("error", function (e) {
+          if (!lastError && e && e.message) lastError = e.message;
+        });
+        window.addEventListener("unhandledrejection", function (e) {
+          if (!lastError) {
+            var reason = e && e.reason;
+            lastError = (reason && (reason.message || String(reason))) || "unhandled rejection";
+          }
+        });
         function isBlank() {
           var root = document.getElementById("root");
           return !root || root.childElementCount === 0;
@@ -58,12 +75,19 @@
             return;
           }
           // Still blank after a fresh fetch: show a manual recovery UI
-          // instead of leaving a permanently white screen.
+          // instead of leaving a permanently white screen. Include any
+          // captured error text so a screenshot of this screen is actually
+          // diagnosable instead of just saying "something went wrong".
           var root = document.getElementById("root");
           if (root) {
             root.innerHTML =
               '<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;font-family:system-ui,-apple-system,sans-serif;padding:24px;text-align:center;background:#f6f7fb;color:#334155;">' +
               "<p>頁面載入異常，請重新整理</p>" +
+              (lastError
+                ? '<p style="font-size:12px;color:#94a3b8;max-width:320px;word-break:break-all;">' +
+                  lastError.replace(/</g, "&lt;") +
+                  "</p>"
+                : "") +
               '<button onclick="sessionStorage.removeItem(\'' +
               RETRY_KEY +
               '\');location.reload()" style="padding:10px 24px;border-radius:12px;background:#7c3aed;color:#fff;border:none;font-size:14px;cursor:pointer;">重新整理</button>' +

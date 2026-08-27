@@ -41,6 +41,18 @@ export const PROVIDERS: {
       { id: "nvidia/llama-3.1-nemotron-70b-instruct", label: "Nemotron 70B Instruct" },
     ],
   },
+  {
+    id: "openai",
+    label: "OpenAI",
+    keyPlaceholder: "sk-...",
+    keyHint:
+      "⚠️ OpenAI API 一般不允許瀏覽器直接跨網域呼叫（CORS），若呼叫失敗請改用 Anthropic 或 Google。",
+    models: [
+      { id: "gpt-4o", label: "GPT-4o（最深度）" },
+      { id: "gpt-4o-mini", label: "GPT-4o mini（推薦，快速）" },
+      { id: "gpt-4.1", label: "GPT-4.1" },
+    ],
+  },
 ];
 
 export class MissingApiKeyError extends Error {
@@ -104,14 +116,16 @@ async function googleComplete(
   return parts.map((p: { text?: string }) => p.text ?? "").join("");
 }
 
-async function nvidiaComplete(
+async function openAICompatibleComplete(
+  baseUrl: string,
+  providerLabel: string,
   apiKey: string,
   model: string,
   system: string,
   messages: ChatTurn[],
   maxTokens: number,
 ): Promise<string> {
-  const res = await fetch("https://integrate.api.nvidia.com/v1/chat/completions", {
+  const res = await fetch(baseUrl, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -125,10 +139,46 @@ async function nvidiaComplete(
   });
   if (!res.ok) {
     const errText = await res.text().catch(() => "");
-    throw new Error(`NVIDIA API 錯誤 (${res.status})：${errText.slice(0, 200)}`);
+    throw new Error(`${providerLabel} API 錯誤 (${res.status})：${errText.slice(0, 200)}`);
   }
   const data = await res.json();
   return data?.choices?.[0]?.message?.content ?? "";
+}
+
+async function nvidiaComplete(
+  apiKey: string,
+  model: string,
+  system: string,
+  messages: ChatTurn[],
+  maxTokens: number,
+): Promise<string> {
+  return openAICompatibleComplete(
+    "https://integrate.api.nvidia.com/v1/chat/completions",
+    "NVIDIA",
+    apiKey,
+    model,
+    system,
+    messages,
+    maxTokens,
+  );
+}
+
+async function openaiComplete(
+  apiKey: string,
+  model: string,
+  system: string,
+  messages: ChatTurn[],
+  maxTokens: number,
+): Promise<string> {
+  return openAICompatibleComplete(
+    "https://api.openai.com/v1/chat/completions",
+    "OpenAI",
+    apiKey,
+    model,
+    system,
+    messages,
+    maxTokens,
+  );
 }
 
 async function chatComplete(
@@ -149,6 +199,8 @@ async function chatComplete(
       return googleComplete(apiKey, model, system, messages, maxTokens);
     case "nvidia":
       return nvidiaComplete(apiKey, model, system, messages, maxTokens);
+    case "openai":
+      return openaiComplete(apiKey, model, system, messages, maxTokens);
   }
 }
 

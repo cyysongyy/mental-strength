@@ -114,7 +114,7 @@ export interface BadgeDef {
 
 export type AppMode = "lite" | "pro";
 
-export type AIProvider = "anthropic" | "google" | "nvidia";
+export type AIProvider = "anthropic" | "google" | "nvidia" | "openai";
 
 export interface Settings {
   mode: AppMode;

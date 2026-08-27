@@ -32,11 +32,12 @@ function writeJSON<T>(key: string, value: T) {
 export const defaultSettings: Settings = {
   mode: "lite",
   provider: "anthropic",
-  apiKeys: { anthropic: "", google: "", nvidia: "" },
+  apiKeys: { anthropic: "", google: "", nvidia: "", openai: "" },
   models: {
     anthropic: "claude-sonnet-5",
     google: "gemini-2.5-flash",
     nvidia: "meta/llama-3.1-405b-instruct",
+    openai: "gpt-4o-mini",
   },
   name: "",
 };

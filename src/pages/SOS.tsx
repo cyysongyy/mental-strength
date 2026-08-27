@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Card, PrimaryButton, SectionTitle } from "../components/Card";
 import ModeBadge, { NeedsApiKeyNotice } from "../components/ModeBadge";
 import { uid, useModuleLogs, useSettings } from "../lib/storage";
-import { generateGroundingScript } from "../lib/claude";
+import { generateGroundingScript, hasActiveApiKey } from "../lib/ai";
 
 const PHASES = [
   { label: "吸氣", color: "text-sky-500" },
@@ -118,7 +118,7 @@ function ProSOS() {
     setLoading(true);
     setError("");
     try {
-      const s = await generateGroundingScript(settings.apiKey, settings.model, context);
+      const s = await generateGroundingScript(settings, context);
       setScript(s);
       add({
         type: "sos",
@@ -136,7 +136,7 @@ function ProSOS() {
     }
   }
 
-  if (!settings.apiKey) return <NeedsApiKeyNotice />;
+  if (!hasActiveApiKey(settings)) return <NeedsApiKeyNotice />;
 
   return (
     <Card className="space-y-4">
@@ -170,7 +170,7 @@ export default function SOS() {
   return (
     <div className="space-y-5">
       <header className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-slate-900 dark:text-white">🫁 應急與能量</h1>
+        <h1 className="text-xl font-bold text-slate-900 dark:text-white">🫁 感受與能量</h1>
         <ModeBadge mode={settings.mode} />
       </header>
       {settings.mode === "pro" ? <ProSOS /> : <LiteSOS />}

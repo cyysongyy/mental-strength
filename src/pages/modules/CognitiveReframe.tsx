@@ -4,7 +4,7 @@ import { Card, GhostButton, PrimaryButton, SectionTitle } from "../../components
 import ModeBadge, { NeedsApiKeyNotice } from "../../components/ModeBadge";
 import { DISTORTIONS, REPLACEMENT_TEMPLATES } from "../../lib/distortions";
 import { uid, useModuleLogs, useSettings } from "../../lib/storage";
-import { reframeChat, type ChatTurn } from "../../lib/claude";
+import { hasActiveApiKey, reframeChat, type ChatTurn } from "../../lib/ai";
 import { MODULE_META } from "../../types";
 
 function LiteReframe({ onDone }: { onDone: () => void }) {
@@ -249,7 +249,7 @@ function ProReframe({ onDone }: { onDone: () => void }) {
     setLoading(true);
     setError("");
     try {
-      const reply = await reframeChat(settings.apiKey, settings.model, nextHistory);
+      const reply = await reframeChat(settings, nextHistory);
       setHistory([...nextHistory, { role: "assistant", content: reply }]);
     } catch (e) {
       setError(e instanceof Error ? e.message : "發生錯誤，請稍後再試");
@@ -278,7 +278,7 @@ function ProReframe({ onDone }: { onDone: () => void }) {
     onDone();
   }
 
-  if (!settings.apiKey) return <NeedsApiKeyNotice />;
+  if (!hasActiveApiKey(settings)) return <NeedsApiKeyNotice />;
 
   return (
     <Card className="space-y-4">

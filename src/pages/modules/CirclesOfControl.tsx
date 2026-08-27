@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Card, PrimaryButton, SectionTitle } from "../../components/Card";
 import ModeBadge, { NeedsApiKeyNotice } from "../../components/ModeBadge";
 import { uid, useModuleLogs, useSettings } from "../../lib/storage";
-import { decomposeCircles } from "../../lib/claude";
+import { decomposeCircles, hasActiveApiKey } from "../../lib/ai";
 import { MODULE_META, type CircleItem, type CircleZone } from "../../types";
 
 const ZONES: { id: CircleZone; label: string; hint: string; color: string }[] = [
@@ -189,7 +189,7 @@ function ProCircles({ onDone }: { onDone: () => void }) {
     setLoading(true);
     setError("");
     try {
-      const r = await decomposeCircles(settings.apiKey, settings.model, text);
+      const r = await decomposeCircles(settings, text);
       setResult(r);
       add({
         type: "circles",
@@ -206,7 +206,7 @@ function ProCircles({ onDone }: { onDone: () => void }) {
     }
   }
 
-  if (!settings.apiKey) return <NeedsApiKeyNotice />;
+  if (!hasActiveApiKey(settings)) return <NeedsApiKeyNotice />;
 
   return (
     <Card className="space-y-4">

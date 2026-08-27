@@ -98,7 +98,9 @@ export async function pushAllToCloud(settings: Settings) {
   const rows = SYNCED_KEYS.map((key) => ({
     user_id: user.id,
     key,
-    value: readJSON<unknown>(key, null),
+    // app_data.value is NOT NULL - a key with nothing stored locally yet
+    // must still upsert as an empty array, never an explicit null.
+    value: readJSON<unknown>(key, []),
     updated_at: new Date().toISOString(),
   }));
   const { error } = await client.from("app_data").upsert(rows, { onConflict: "user_id,key" });
@@ -114,7 +116,7 @@ export async function pushKeyToCloud(settings: Settings, key: string) {
   const user = userData.user;
   if (!user) return;
   await client.from("app_data").upsert(
-    { user_id: user.id, key, value: readJSON<unknown>(key, null), updated_at: new Date().toISOString() },
+    { user_id: user.id, key, value: readJSON<unknown>(key, []), updated_at: new Date().toISOString() },
     { onConflict: "user_id,key" },
   );
 }

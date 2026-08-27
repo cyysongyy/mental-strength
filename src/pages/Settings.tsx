@@ -224,6 +224,40 @@ function CloudSyncCard({
   );
 }
 
+function BuildStamp() {
+  const builtAt = new Date(__BUILD_TIME__);
+  const builtAtLabel = Number.isNaN(builtAt.getTime())
+    ? __BUILD_TIME__
+    : builtAt.toLocaleString("zh-TW", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+
+  // A plain reload can be served straight from cache, which is exactly the
+  // failure this stamp exists to make visible - so force a fresh fetch.
+  function forceRefresh() {
+    location.replace(`${location.pathname}?_v=${Date.now()}${location.hash}`);
+  }
+
+  return (
+    <div className="pb-2 text-center space-y-2">
+      <p className="text-xs text-slate-400 dark:text-slate-500">
+        版本 {__BUILD_COMMIT__} ・ 更新於 {builtAtLabel}
+      </p>
+      <button
+        type="button"
+        onClick={forceRefresh}
+        className="text-xs text-violet-500 dark:text-violet-400 underline underline-offset-2"
+      >
+        重新載入最新版本
+      </button>
+    </div>
+  );
+}
+
 export default function Settings() {
   const { settings, update } = useSettings();
   const { items: checkIns } = useCheckIns();
@@ -374,6 +408,8 @@ export default function Settings() {
           </div>
         )}
       </Card>
+
+      <BuildStamp />
     </div>
   );
 }

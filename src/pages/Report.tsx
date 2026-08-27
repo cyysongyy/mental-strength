@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Card, PrimaryButton, SectionTitle } from "../components/Card";
 import ModeBadge, { NeedsApiKeyNotice } from "../components/ModeBadge";
+import { LeafAccent } from "../components/Illustrations";
 import {
   isWithinLastDays,
   uid,
@@ -26,27 +27,43 @@ function LiteReport() {
 
   return (
     <div className="space-y-5">
-      <Card className="grid grid-cols-2 gap-4 text-center">
-        <div>
+      <Card className="grid grid-cols-2 gap-4">
+        <div className="flex flex-col items-center text-center gap-1.5">
+          <span className="w-12 h-12 rounded-full bg-orange-100 dark:bg-orange-500/20 flex items-center justify-center text-2xl">
+            🔥
+          </span>
           <p className="text-3xl font-bold text-orange-500">{streak}</p>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">連續打卡天數</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">連續打卡天數</p>
         </div>
-        <div>
+        <div className="flex flex-col items-center text-center gap-1.5">
+          <span className="w-12 h-12 rounded-full bg-violet-100 dark:bg-violet-500/20 flex items-center justify-center text-2xl">
+            ⏱️
+          </span>
           <p className="text-3xl font-bold text-violet-500">{checkIns.length}</p>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">累計快測次數</p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">累計快測次數</p>
         </div>
       </Card>
 
       <Card>
-        <SectionTitle title="各模組使用次數" />
-        <div className="space-y-3">
+        <div className="flex items-center gap-1.5 mb-3">
+          <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">各模組使用次數</h2>
+          <LeafAccent className="w-6 h-4" />
+        </div>
+        <div className="space-y-4">
           {(Object.keys(MODULE_META) as ModuleId[]).map((id) => (
             <div key={id}>
-              <div className="flex justify-between text-sm mb-1">
-                <span>
-                  {MODULE_META[id].icon} {MODULE_META[id].name}
+              <div className="flex items-center gap-2 text-sm mb-1.5">
+                <span
+                  className={`w-7 h-7 shrink-0 rounded-full bg-gradient-to-br ${MODULE_META[id].color} flex items-center justify-center text-sm`}
+                >
+                  {MODULE_META[id].icon}
                 </span>
-                <span className="font-semibold">{counts[id] ?? 0}</span>
+                <span className="flex-1 font-medium text-slate-700 dark:text-slate-200">
+                  {MODULE_META[id].name}
+                </span>
+                <span className="font-semibold text-slate-900 dark:text-white">
+                  {counts[id] ?? 0}
+                </span>
               </div>
               <div className="h-2 rounded-full bg-slate-100 dark:bg-slate-800">
                 <div
@@ -68,10 +85,10 @@ function LiteReport() {
               <div
                 key={b.id}
                 title={b.description}
-                className={`flex flex-col items-center text-center gap-1 p-2 rounded-xl ${
+                className={`flex flex-col items-center text-center gap-1 p-2 rounded-xl border ${
                   isUnlocked
-                    ? "bg-violet-50 dark:bg-violet-500/10"
-                    : "opacity-30 grayscale"
+                    ? "bg-violet-50 dark:bg-violet-500/10 border-violet-200 dark:border-violet-500/30"
+                    : "border-transparent opacity-30 grayscale"
                 }`}
               >
                 <span className="text-2xl">{b.icon}</span>
@@ -185,7 +202,9 @@ export default function Report() {
   return (
     <div className="space-y-5">
       <header className="flex items-center justify-between">
-        <h1 className="text-xl font-bold text-slate-900 dark:text-white">📊 紀錄</h1>
+        <h1 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+          📊 紀錄 <LeafAccent className="w-6 h-4" />
+        </h1>
         <ModeBadge mode={settings.mode} />
       </header>
       {settings.mode === "pro" ? <ProReport /> : <LiteReport />}

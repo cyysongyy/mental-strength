@@ -1,14 +1,18 @@
 import { useState } from "react";
 import { Card, GhostButton, PrimaryButton, SectionTitle } from "../components/Card";
-import { useSettings } from "../lib/storage";
+import { LeafAccent } from "../components/Illustrations";
+import { useCheckIns, useSettings } from "../lib/storage";
+import { computeStreak } from "../lib/badges";
 import { PROVIDERS } from "../lib/ai";
 import type { AIProvider } from "../types";
 
 export default function Settings() {
   const { settings, update } = useSettings();
+  const { items: checkIns } = useCheckIns();
   const [showKey, setShowKey] = useState(false);
   const [confirmClear, setConfirmClear] = useState(false);
 
+  const streak = computeStreak(checkIns);
   const activeProvider = PROVIDERS.find((p) => p.id === settings.provider)!;
 
   function clearAllData() {
@@ -31,8 +35,24 @@ export default function Settings() {
   return (
     <div className="space-y-5">
       <header>
-        <h1 className="text-xl font-bold text-slate-900 dark:text-white">🙂 我的</h1>
+        <h1 className="text-xl font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
+          我的 <LeafAccent className="w-6 h-4" />
+        </h1>
       </header>
+
+      <Card className="flex items-center gap-4">
+        <span className="w-16 h-16 shrink-0 rounded-full bg-gradient-to-br from-violet-400 to-fuchsia-400 flex items-center justify-center text-3xl">
+          🙂
+        </span>
+        <div className="min-w-0">
+          <p className="font-semibold text-slate-900 dark:text-white truncate">
+            {settings.name || "訪客"}
+          </p>
+          <p className="text-sm text-slate-500 dark:text-slate-400">
+            🔥 連續打卡 {streak} 天
+          </p>
+        </div>
+      </Card>
 
       <Card className="space-y-4">
         <SectionTitle title="暱稱" subtitle="用來在首頁跟你打招呼（選填）" />

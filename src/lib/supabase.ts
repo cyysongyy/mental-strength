@@ -9,19 +9,32 @@ export class CloudNotConfiguredError extends Error {
   }
 }
 
-let cached: { url: string; anonKey: string; client: SupabaseClient } | null = null;
+let cached: { url: string; anonKey: string; clientPromise: Promise<SupabaseClient> } | null = null;
 
 // @supabase/supabase-js is a large dependency that most users (who never
 // touch cloud sync) shouldn't have to download as part of the app's initial
 // bundle - load it lazily, only once cloud sync is actually configured.
+//
+// getCurrentUser() and onAuthStateChange() both call this at effectively the
+// same time on mount. The cache slot must be claimed synchronously (before
+// the first await) so the second concurrent call reuses the same in-flight
+// promise instead of racing to create its own client - two separate
+// GoTrueClient instances would each keep their own session state, so a
+// login through one would never be seen by a listener registered on the
+// other, leaving the UI stuck showing "logged out" even after a real login.
 export async function getSupabaseClient(settings: Settings): Promise<SupabaseClient | null> {
   const { url, anonKey } = settings.cloudSync;
   if (!url || !anonKey) return null;
-  if (cached && cached.url === url && cached.anonKey === anonKey) return cached.client;
-  const { createClient } = await import("@supabase/supabase-js");
-  const client = createClient(url, anonKey);
-  cached = { url, anonKey, client };
-  return client;
+  if (!cached || cached.url !== url || cached.anonKey !== anonKey) {
+    cached = {
+      url,
+      anonKey,
+      clientPromise: import("@supabase/supabase-js").then(({ createClient }) =>
+        createClient(url, anonKey),
+      ),
+    };
+  }
+  return cached.clientPromise;
 }
 
 async function requireClient(settings: Settings): Promise<SupabaseClient> {

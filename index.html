@@ -21,12 +21,29 @@
         // not gated on window.load, since that also waits on unrelated
         // third-party resources (e.g. the Google Fonts link above) and
         // would delay detecting a real mount failure.
+        //
+        // On a weak/slow mobile connection, fetching+parsing the JS bundle
+        // can genuinely take many seconds. Rather than guess a fixed
+        // timeout, poll and only act once the browser itself reports the
+        // page finished loading (document.readyState === "complete") -
+        // plus a hard cap as a safety net in case that never fires. Acting
+        // too early on a page that's simply still loading only makes a
+        // slow connection slower by restarting the download.
+        var HARD_CAP_MS = 20000;
+        var POLL_INTERVAL_MS = 500;
         var RETRY_KEY = "ms_reload_retry";
+        var startedAt = Date.now();
         function isBlank() {
           var root = document.getElementById("root");
           return !root || root.childElementCount === 0;
         }
-        setTimeout(function () {
+        function check() {
+          var pageStillLoading =
+            document.readyState !== "complete" && Date.now() - startedAt < HARD_CAP_MS;
+          if (pageStillLoading) {
+            setTimeout(check, POLL_INTERVAL_MS);
+            return;
+          }
           if (!isBlank()) {
             sessionStorage.removeItem(RETRY_KEY);
             return;
@@ -52,7 +69,8 @@
               '\');location.reload()" style="padding:10px 24px;border-radius:12px;background:#7c3aed;color:#fff;border:none;font-size:14px;cursor:pointer;">重新整理</button>' +
               "</div>";
           }
-        }, 3000);
+        }
+        check();
       })();
     </script>
     <script type="module" src="/src/main.tsx"></script>

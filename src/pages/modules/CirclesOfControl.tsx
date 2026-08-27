@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, PrimaryButton, SectionTitle } from "../../components/Card";
 import ModeBadge, { NeedsApiKeyNotice } from "../../components/ModeBadge";
+import { TheoryNote } from "../../components/TheoryNote";
 import { uid, useModuleLogs, useSettings } from "../../lib/storage";
 import { decomposeCircles, hasActiveApiKey } from "../../lib/ai";
 import { MODULE_META, type CircleItem, type CircleZone } from "../../types";
@@ -99,6 +100,10 @@ function LiteCircles({ onDone }: { onDone: () => void }) {
 
       <Card className="space-y-3">
         <SectionTitle title="Step 1 · 列出煩心事" subtitle="想到什麼就寫下來，一項一項來" />
+        <TheoryNote framework="史多葛學派・控制二分法">
+          源自古希臘羅馬的史多葛哲學（Epictetus 提出的「控制二分法」），也對應心理學家 Suzanne
+          Kobasa 的「心理韌性」（Hardiness）理論：把精力只投注在自己真正能改變的事，主動放下無法掌控的部分，能有效降低長期焦慮與無力感。這也是柯維「七個習慣」中「影響圈」概念的哲學根源。
+        </TheoryNote>
         <div className="flex gap-2">
           <input
             value={input}

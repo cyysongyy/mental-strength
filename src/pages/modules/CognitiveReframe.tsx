@@ -2,6 +2,9 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, GhostButton, PrimaryButton, SectionTitle } from "../../components/Card";
 import ModeBadge, { NeedsApiKeyNotice } from "../../components/ModeBadge";
+import { TheoryNote } from "../../components/TheoryNote";
+import { ImplementationIntention } from "../../components/ImplementationIntention";
+import { formatImplementationIntention } from "../../lib/implementationIntention";
 import { DISTORTIONS, REPLACEMENT_TEMPLATES } from "../../lib/distortions";
 import { uid, useModuleLogs, useSettings } from "../../lib/storage";
 import { hasActiveApiKey, reframeChat, type ChatTurn } from "../../lib/ai";
@@ -16,6 +19,8 @@ function LiteReframe({ onDone }: { onDone: () => void }) {
   const [forIt, setForIt] = useState("");
   const [againstIt, setAgainstIt] = useState("");
   const [replacement, setReplacement] = useState("");
+  const [ifSituation, setIfSituation] = useState("");
+  const [thenAction, setThenAction] = useState("");
   const [submitted, setSubmitted] = useState(false);
 
   function toggleDistortion(id: string) {
@@ -39,6 +44,7 @@ function LiteReframe({ onDone }: { onDone: () => void }) {
       factCheck: { forIt, againstIt },
       replacement,
       mode: "lite",
+      implementationIntention: formatImplementationIntention(ifSituation, thenAction),
     });
     setSubmitted(true);
   }
@@ -54,6 +60,14 @@ function LiteReframe({ onDone }: { onDone: () => void }) {
           <p className="text-xs text-violet-500 font-medium mb-1">你的替代想法</p>
           <p className="text-slate-800 dark:text-violet-100">{replacement || "（未填寫）"}</p>
         </div>
+        {formatImplementationIntention(ifSituation, thenAction) && (
+          <div className="rounded-xl bg-sky-50 dark:bg-sky-500/10 p-4 border border-sky-200 dark:border-sky-500/30">
+            <p className="text-xs text-sky-600 dark:text-sky-300 font-medium mb-1">你的若-則計畫</p>
+            <p className="text-slate-800 dark:text-sky-100">
+              {formatImplementationIntention(ifSituation, thenAction)}
+            </p>
+          </div>
+        )}
         <p className="text-sm text-slate-500 dark:text-slate-400">
           小提示：下次浮現類似的自動化思維時，試著先停下來問自己「有什麼證據支持/不支持這個想法？」
         </p>
@@ -69,6 +83,10 @@ function LiteReframe({ onDone }: { onDone: () => void }) {
       {step === 1 && (
         <>
           <SectionTitle title="Step 1 · 觸發事件" subtitle="發生了什麼事，讓你有這樣的感覺？" />
+          <TheoryNote framework="認知行為治療 CBT">
+            這個練習源自 Aaron Beck
+            的認知行為治療理論：我們對事件的情緒反應，往往不是事件本身造成的，而是來自我們對事件的「自動化想法」。透過辨識想法中的認知偏誤（如全有全無、災難化），並用證據重新檢視，可以有效降低該想法帶來的情緒強度。
+          </TheoryNote>
           <textarea
             value={trigger}
             onChange={(e) => setTrigger(e.target.value)}
@@ -216,6 +234,14 @@ function LiteReframe({ onDone }: { onDone: () => void }) {
             rows={2}
             placeholder="或自己寫下替代想法..."
             className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent p-3 text-sm"
+          />
+          <ImplementationIntention
+            situation={ifSituation}
+            action={thenAction}
+            onSituationChange={setIfSituation}
+            onActionChange={setThenAction}
+            situationPlaceholder="類似的想法又出現時"
+            actionPlaceholder="停下來問自己有什麼證據"
           />
           <div className="flex gap-2">
             <GhostButton onClick={() => setStep(4)}>上一步</GhostButton>

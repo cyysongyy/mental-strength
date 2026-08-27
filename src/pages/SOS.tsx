@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { Card, PrimaryButton, SectionTitle } from "../components/Card";
 import ModeBadge, { NeedsApiKeyNotice } from "../components/ModeBadge";
+import { TheoryNote } from "../components/TheoryNote";
 import { uid, useModuleLogs, useSettings } from "../lib/storage";
 import { generateGroundingScript, hasActiveApiKey } from "../lib/ai";
 
@@ -72,6 +73,10 @@ function LiteSOS() {
     <div className="space-y-4">
       <Card>
         <SectionTitle title="箱式呼吸" subtitle="4 秒吸氣、4 秒屏息、4 秒吐氣、4 秒屏息" />
+        <TheoryNote framework="多重迷走神經理論 Polyvagal Theory">
+          刻意放慢、延長吐氣的呼吸方式，會刺激迷走神經，啟動副交感神經系統（讓身體「煞車」的系統），直接降低心跳與皮質醇濃度。這是少數能在
+          90 秒內用生理方式主動關掉「戰或逃」反應的科學實證方法，美軍與運動員也常用類似技巧快速鎮定。
+        </TheoryNote>
         <BoxBreathing />
       </Card>
 

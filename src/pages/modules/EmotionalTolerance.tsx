@@ -2,6 +2,9 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, GhostButton, PrimaryButton, SectionTitle } from "../../components/Card";
 import ModeBadge, { NeedsApiKeyNotice } from "../../components/ModeBadge";
+import { TheoryNote } from "../../components/TheoryNote";
+import { ImplementationIntention } from "../../components/ImplementationIntention";
+import { formatImplementationIntention } from "../../lib/implementationIntention";
 import { uid, useModuleLogs, useSettings } from "../../lib/storage";
 import { hasActiveApiKey, planMicroExposure } from "../../lib/ai";
 import { MODULE_META } from "../../types";
@@ -26,6 +29,8 @@ function LiteTolerance({ onDone }: { onDone: () => void }) {
   const [running, setRunning] = useState(false);
   const [finished, setFinished] = useState(false);
   const [checked, setChecked] = useState<boolean[]>(CHECKLIST.map(() => false));
+  const [ifSituation, setIfSituation] = useState("");
+  const [thenAction, setThenAction] = useState("");
   const intervalRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -62,6 +67,7 @@ function LiteTolerance({ onDone }: { onDone: () => void }) {
       durationSec: duration,
       completed: finished,
       mode: "lite",
+      implementationIntention: formatImplementationIntention(ifSituation, thenAction),
     });
     onDone();
   }
@@ -74,6 +80,9 @@ function LiteTolerance({ onDone }: { onDone: () => void }) {
         title="計時微挑戰"
         subtitle="選一個時間長度，帶著不適感專注完成"
       />
+      <TheoryNote framework="辯證行為治療 DBT・痛苦耐受">
+        源自 Marsha Linehan 發展的辯證行為治療（DBT）中的「痛苦耐受技巧」（Distress Tolerance）：與其逃避或壓抑不舒服的感覺，練習「帶著它」撐過一小段時間，能讓大腦逐漸學會不適感是可以承受、會自然消退的，長期能提升情緒耐受度與衝動控制力。
+      </TheoryNote>
       <div className="flex gap-2">
         <GhostButton active={duration === 180} onClick={() => selectDuration(180)}>
           3 分鐘
@@ -136,9 +145,19 @@ function LiteTolerance({ onDone }: { onDone: () => void }) {
       </div>
 
       {finished && (
-        <div className="rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 p-3 text-sm text-amber-700 dark:text-amber-300">
-          做得好！你剛剛帶著不適感撐過了 {formatTime(duration)}，這正是情緒耐受力被訓練的時刻。
-        </div>
+        <>
+          <div className="rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 p-3 text-sm text-amber-700 dark:text-amber-300">
+            做得好！你剛剛帶著不適感撐過了 {formatTime(duration)}，這正是情緒耐受力被訓練的時刻。
+          </div>
+          <ImplementationIntention
+            situation={ifSituation}
+            action={thenAction}
+            onSituationChange={setIfSituation}
+            onActionChange={setThenAction}
+            situationPlaceholder="下次感到類似的不適感時"
+            actionPlaceholder="先深呼吸，撐過 3 分鐘"
+          />
+        </>
       )}
 
       <PrimaryButton onClick={handleSubmit} disabled={!finished} className="w-full">

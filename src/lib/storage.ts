@@ -3,6 +3,7 @@ import type {
   CheckIn,
   ModuleLogEntry,
   Settings,
+  ToughnessEntry,
   WeeklyReport,
 } from "../types";
 
@@ -12,6 +13,7 @@ const KEYS = {
   settings: "ms.settings.v1",
   reports: "ms.reports.v1",
   badges: "ms.badges.v1",
+  toughness: "ms.toughness.v1",
 } as const;
 
 function readJSON<T>(key: string, fallback: T): T {
@@ -32,11 +34,12 @@ function writeJSON<T>(key: string, value: T) {
 export const defaultSettings: Settings = {
   mode: "lite",
   provider: "anthropic",
-  apiKeys: { anthropic: "", google: "", nvidia: "" },
+  apiKeys: { anthropic: "", google: "", nvidia: "", openai: "" },
   models: {
     anthropic: "claude-sonnet-5",
     google: "gemini-2.5-flash",
     nvidia: "meta/llama-3.1-405b-instruct",
+    openai: "gpt-4o-mini",
   },
   name: "",
 };
@@ -87,6 +90,10 @@ export function useModuleLogs() {
 
 export function useWeeklyReports() {
   return useStoredList<WeeklyReport>(KEYS.reports);
+}
+
+export function useToughnessEntries() {
+  return useStoredList<ToughnessEntry>(KEYS.toughness);
 }
 
 export function useSettings() {

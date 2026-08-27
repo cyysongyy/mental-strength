@@ -15,6 +15,46 @@
   </head>
   <body>
     <div id="root"></div>
+    <script>
+      (function () {
+        // Runs immediately as the parser reaches this point - deliberately
+        // not gated on window.load, since that also waits on unrelated
+        // third-party resources (e.g. the Google Fonts link above) and
+        // would delay detecting a real mount failure.
+        var RETRY_KEY = "ms_reload_retry";
+        function isBlank() {
+          var root = document.getElementById("root");
+          return !root || root.childElementCount === 0;
+        }
+        setTimeout(function () {
+          if (!isBlank()) {
+            sessionStorage.removeItem(RETRY_KEY);
+            return;
+          }
+          if (!sessionStorage.getItem(RETRY_KEY)) {
+            // First failure: assume a stale cached page pointing at
+            // deleted build assets, and force one genuinely fresh fetch.
+            sessionStorage.setItem(RETRY_KEY, "1");
+            location.replace(
+              location.pathname + "?_r=" + Date.now() + location.hash,
+            );
+            return;
+          }
+          // Still blank after a fresh fetch: show a manual recovery UI
+          // instead of leaving a permanently white screen.
+          var root = document.getElementById("root");
+          if (root) {
+            root.innerHTML =
+              '<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;font-family:system-ui,-apple-system,sans-serif;padding:24px;text-align:center;background:#f6f7fb;color:#334155;">' +
+              "<p>頁面載入異常，請重新整理</p>" +
+              '<button onclick="sessionStorage.removeItem(\'' +
+              RETRY_KEY +
+              '\');location.reload()" style="padding:10px 24px;border-radius:12px;background:#7c3aed;color:#fff;border:none;font-size:14px;cursor:pointer;">重新整理</button>' +
+              "</div>";
+          }
+        }, 3000);
+      })();
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

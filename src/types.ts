@@ -124,6 +124,7 @@ export interface Settings {
   apiKeys: Record<AIProvider, string>;
   models: Record<AIProvider, string>;
   name: string;
+  cloudSync: { url: string; anonKey: string };
 }
 
 export interface WeeklyReport {

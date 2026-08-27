@@ -7,7 +7,7 @@ import type {
   WeeklyReport,
 } from "../types";
 
-const KEYS = {
+export const KEYS = {
   checkins: "ms.checkins.v1",
   logs: "ms.logs.v1",
   settings: "ms.settings.v1",
@@ -16,7 +16,7 @@ const KEYS = {
   toughness: "ms.toughness.v1",
 } as const;
 
-function readJSON<T>(key: string, fallback: T): T {
+export function readJSON<T>(key: string, fallback: T): T {
   try {
     const raw = localStorage.getItem(key);
     if (!raw) return fallback;
@@ -26,10 +26,20 @@ function readJSON<T>(key: string, fallback: T): T {
   }
 }
 
-function writeJSON<T>(key: string, value: T) {
+export function writeJSON<T>(key: string, value: T) {
   localStorage.setItem(key, JSON.stringify(value));
   window.dispatchEvent(new CustomEvent("ms-storage", { detail: { key } }));
 }
+
+// Everything except "settings" - that key holds the user's AI provider API
+// keys, which must never leave this device even when cloud sync is on.
+export const SYNCED_KEYS: string[] = [
+  KEYS.checkins,
+  KEYS.logs,
+  KEYS.reports,
+  KEYS.badges,
+  KEYS.toughness,
+];
 
 export const defaultSettings: Settings = {
   mode: "lite",
@@ -42,6 +52,7 @@ export const defaultSettings: Settings = {
     openai: "gpt-4o-mini",
   },
   name: "",
+  cloudSync: { url: "", anonKey: "" },
 };
 
 function useStoredList<T>(key: string) {
@@ -96,23 +107,28 @@ export function useToughnessEntries() {
   return useStoredList<ToughnessEntry>(KEYS.toughness);
 }
 
+// Merge over defaultSettings (not just fall back to it) so a settings blob
+// saved by an older build - missing a field added since - still comes out
+// as a complete, safe-to-read Settings object instead of crashing whatever
+// page first reads the missing field.
+function readSettings(): Settings {
+  return { ...defaultSettings, ...readJSON(KEYS.settings, defaultSettings) };
+}
+
 export function useSettings() {
-  const [settings, setSettings] = useState<Settings>(() =>
-    readJSON(KEYS.settings, defaultSettings),
-  );
+  const [settings, setSettings] = useState<Settings>(readSettings);
 
   useEffect(() => {
     const handler = (e: Event) => {
       const detail = (e as CustomEvent).detail;
-      if (detail?.key === KEYS.settings)
-        setSettings(readJSON(KEYS.settings, defaultSettings));
+      if (detail?.key === KEYS.settings) setSettings(readSettings());
     };
     window.addEventListener("ms-storage", handler);
     return () => window.removeEventListener("ms-storage", handler);
   }, []);
 
   const update = useCallback((patch: Partial<Settings>) => {
-    const next = { ...readJSON(KEYS.settings, defaultSettings), ...patch };
+    const next = { ...readSettings(), ...patch };
     writeJSON(KEYS.settings, next);
     setSettings(next);
   }, []);

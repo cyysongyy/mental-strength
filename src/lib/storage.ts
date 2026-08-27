@@ -3,6 +3,7 @@ import type {
   CheckIn,
   ModuleLogEntry,
   Settings,
+  ToughnessEntry,
   WeeklyReport,
 } from "../types";
 
@@ -12,6 +13,7 @@ const KEYS = {
   settings: "ms.settings.v1",
   reports: "ms.reports.v1",
   badges: "ms.badges.v1",
+  toughness: "ms.toughness.v1",
 } as const;
 
 function readJSON<T>(key: string, fallback: T): T {
@@ -88,6 +90,10 @@ export function useModuleLogs() {
 
 export function useWeeklyReports() {
   return useStoredList<WeeklyReport>(KEYS.reports);
+}
+
+export function useToughnessEntries() {
+  return useStoredList<ToughnessEntry>(KEYS.toughness);
 }
 
 export function useSettings() {

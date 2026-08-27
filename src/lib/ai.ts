@@ -284,11 +284,11 @@ export async function generateWeeklyReport(
 ): Promise<string> {
   return chatComplete(
     settings,
-    `你是使用者的「心理肌肉週報」分析教練。以下是使用者過去一週在 App 中的訓練紀錄摘要（JSON 或條列文字）。
+    `你是使用者的「心理肌肉週報」分析教練。以下是使用者過去一週在 App 中的訓練紀錄摘要（JSON 或條列文字），若包含 "toughnessScores" 欄位，代表使用者實際做過「4Cs 心理韌性測驗」，裡面是 1-5 分的真實分數。
 請產出一份「MMI 心理肌肉週報」，繁體中文，使用 Markdown 標題與條列，包含：
 ## 本週總覽（1-2句總結趨勢）
 ## 4C 分析
-針對 Challenge（挑戰）、Commitment（承諾）、Control（控制）、Confidence（信心）四個面向，各給 1-2 句根據紀錄的觀察與簡短評分描述（不要編造數字分數，用「提升/持平/待加強」等描述性字詞）。
+針對 Challenge（挑戰）、Commitment（承諾）、Control（控制）、Confidence（信心）四個面向：若摘要中有 toughnessScores 真實分數，直接引用該分數並說明其代表的意義與變化（例如與上次測驗的差異）；若沒有真實分數，才用「提升/持平/待加強」等描述性字詞，根據紀錄的質性觀察來寫，不要編造數字。
 ## 尚未察覺的思維盲點
 列出 1-3 點根據紀錄推測的、使用者可能沒意識到的思維模式或迴避行為。
 ## 下週建議行動

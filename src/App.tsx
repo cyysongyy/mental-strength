@@ -8,6 +8,7 @@ import EmotionalTolerance from "./pages/modules/EmotionalTolerance";
 import SOS from "./pages/SOS";
 import Report from "./pages/Report";
 import Settings from "./pages/Settings";
+import Toughness from "./pages/Toughness";
 
 export default function App() {
   return (
@@ -21,6 +22,7 @@ export default function App() {
           <Route path="/modules/tolerance" element={<EmotionalTolerance />} />
           <Route path="/sos" element={<SOS />} />
           <Route path="/report" element={<Report />} />
+          <Route path="/toughness" element={<Toughness />} />
           <Route path="/settings" element={<Settings />} />
         </Routes>
       </div>

@@ -62,6 +62,7 @@ export interface ReframeEntry {
   replacement: string;
   mode: "lite" | "pro";
   aiDialogue?: { role: "coach" | "user"; text: string }[];
+  implementationIntention?: string;
 }
 
 export type CircleZone = "control" | "influence" | "concern";
@@ -88,6 +89,7 @@ export interface ToleranceEntry {
   completed: boolean;
   mode: "lite" | "pro";
   aiPlan?: { step: number; title: string; description: string }[];
+  implementationIntention?: string;
 }
 
 export interface SOSEntry {
@@ -129,4 +131,13 @@ export interface WeeklyReport {
   timestamp: number;
   weekLabel: string;
   content: string;
+}
+
+export type ToughnessDimension = "challenge" | "commitment" | "control" | "confidence";
+
+export interface ToughnessEntry {
+  id: string;
+  timestamp: number;
+  answers: number[]; // 12 raw 1-5 answers, in TOUGHNESS_ITEMS order
+  scores: Record<ToughnessDimension, number>; // 1-5 average per dimension
 }

@@ -141,6 +141,11 @@ export default function Memory() {
                           重複 {t.occurrences.length} 次
                         </span>
                       )}
+                      {t.needsNewApproach && (
+                        <span className="px-2 py-0.5 rounded-full bg-rose-100 dark:bg-rose-500/20 text-rose-700 dark:text-rose-300">
+                          建議換方法
+                        </span>
+                      )}
                       <span className="ml-auto text-slate-400">
                         {new Date(t.lastAt).toLocaleDateString("zh-TW")}
                       </span>
@@ -155,6 +160,25 @@ export default function Memory() {
                         第一次到最近一次相隔 {daysBetween(t.firstAt, t.lastAt)} 天 ・ 用過{" "}
                         {t.modules.map((m) => MODULE_META[m].name).join("、")}
                       </p>
+                    )}
+
+                    {t.beforeTrend.length > 0 && (
+                      <div className="flex items-center gap-2 text-xs">
+                        <span className="text-slate-400">情緒強度</span>
+                        <span className="flex items-center gap-1 font-medium text-slate-700 dark:text-slate-200 tabular-nums">
+                          {t.beforeTrend.map((v, i) => (
+                            <span key={i}>
+                              {i > 0 && <span className="text-slate-300 mx-0.5">→</span>}
+                              {v}
+                            </span>
+                          ))}
+                        </span>
+                        {t.avgDrop !== undefined && t.avgDrop > 0 && (
+                          <span className="text-emerald-600 dark:text-emerald-400">
+                            平均下降 {t.avgDrop.toFixed(1)} 分
+                          </span>
+                        )}
+                      </div>
                     )}
 
                     <div className="rounded-xl bg-violet-50 dark:bg-violet-500/10 p-3 border border-violet-200 dark:border-violet-500/30">
@@ -197,6 +221,16 @@ export default function Memory() {
                             <p className="text-sm text-slate-700 dark:text-slate-200 mt-0.5">
                               → {o.answer}
                             </p>
+                            {typeof o.before === "number" && typeof o.after === "number" && (
+                              <p className="text-[11px] text-slate-400 mt-0.5 tabular-nums">
+                                強度 {o.before} → {o.after}
+                                {o.before > o.after && (
+                                  <span className="text-emerald-600 dark:text-emerald-400 ml-1">
+                                    （降 {o.before - o.after}）
+                                  </span>
+                                )}
+                              </p>
+                            )}
                           </div>
                         ))}
                       </div>

@@ -59,6 +59,16 @@ export interface EventThread {
   modules: ModuleId[];
   latestAnswer: string;
   latestPlan?: string;
+  /** Average drop in distress across rated practices, if any were rated. */
+  avgDrop?: number;
+  /** Distress before the practice, oldest → newest, for rated practices. */
+  beforeTrend: number[];
+  /**
+   * True when this keeps coming back and the practices are not bringing the
+   * distress down - the signal that it is worth trying a different approach
+   * rather than repeating the same one.
+   */
+  needsNewApproach: boolean;
 }
 
 // Two entries belong to the same event above this overlap. Set high enough
@@ -70,7 +80,28 @@ function toThread(occurrences: MemoryItem[]): EventThread {
   const sorted = [...occurrences].sort((a, b) => b.timestamp - a.timestamp);
   const latest = sorted[0];
   const withPlan = sorted.find((m) => m.plan);
+
+  const rated = sorted.filter(
+    (m): m is MemoryItem & { before: number; after: number } =>
+      typeof m.before === "number" && typeof m.after === "number",
+  );
+  const avgDrop =
+    rated.length > 0
+      ? rated.reduce((sum, m) => sum + (m.before - m.after), 0) / rated.length
+      : undefined;
+  const beforeTrend = [...rated].reverse().map((m) => m.before);
+
+  // Recurring, rated more than once, and the starting distress is not
+  // trending down - repeating the same approach is not working.
+  const needsNewApproach =
+    sorted.length >= 2 &&
+    beforeTrend.length >= 2 &&
+    beforeTrend[beforeTrend.length - 1] >= beforeTrend[0];
+
   return {
+    avgDrop,
+    beforeTrend,
+    needsNewApproach,
     id: latest.id,
     title: latest.problem,
     theme: classifyTheme(sorted.map((m) => m.problem).join(" ")),

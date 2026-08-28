@@ -52,6 +52,15 @@ export interface DistortionTag {
   description: string;
 }
 
+/**
+ * Distress rating before and after a practice, 0-10 (SUDS). Optional because
+ * older entries predate it - anything reading these must tolerate undefined.
+ */
+export interface IntensityRating {
+  before?: number;
+  after?: number;
+}
+
 export interface ReframeEntry {
   id: string;
   timestamp: number;
@@ -63,6 +72,7 @@ export interface ReframeEntry {
   mode: "lite" | "pro";
   aiDialogue?: { role: "coach" | "user"; text: string }[];
   implementationIntention?: string;
+  intensity?: IntensityRating;
 }
 
 export type CircleZone = "control" | "influence" | "concern";
@@ -79,6 +89,7 @@ export interface CirclesEntry {
   items: CircleItem[];
   mode: "lite" | "pro";
   aiBreakdown?: { controllable: string[]; uncontrollable: string[]; actions: string[] };
+  intensity?: IntensityRating;
 }
 
 export interface ToleranceEntry {
@@ -90,6 +101,7 @@ export interface ToleranceEntry {
   mode: "lite" | "pro";
   aiPlan?: { step: number; title: string; description: string }[];
   implementationIntention?: string;
+  intensity?: IntensityRating;
 }
 
 export interface SOSEntry {
@@ -99,6 +111,7 @@ export interface SOSEntry {
   technique: "box-breathing" | "ai-grounding";
   mode: "lite" | "pro";
   aiScript?: string;
+  intensity?: IntensityRating;
 }
 
 export type ModuleLogEntry =

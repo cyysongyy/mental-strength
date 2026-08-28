@@ -292,6 +292,7 @@ export async function generateWeeklyReport(
   return chatComplete(
     settings,
     `你是使用者的「心理肌肉週報」分析教練。以下是使用者過去一週在 App 中的訓練紀錄摘要（JSON 或條列文字），若包含 "toughnessScores" 欄位，代表使用者實際做過「4Cs 心理韌性測驗」，裡面是 1-5 分的真實分數。
+若紀錄中有 "intensity" 欄位（{before, after}，0-10 的情緒強度自評），那是使用者在該次練習前後的真實評分：請據此指出哪些做法確實讓強度下降、哪些沒有效果，並在建議中優先採用對這位使用者實際有效的方法。不要編造沒有出現的數字。
 請產出一份「MMI 心理肌肉週報」，繁體中文，使用 Markdown 標題與條列，包含：
 ## 本週總覽（1-2句總結趨勢）
 ## 4C 分析

@@ -1,8 +1,10 @@
 import { useMemo, useState } from "react";
+import { useLocation } from "react-router-dom";
 import { Card, GhostButton, SectionTitle } from "../components/Card";
 import { LeafAccent } from "../components/Illustrations";
 import { useCheckIns, useModuleLogs, useToughnessEntries } from "../lib/storage";
 import { RECORD_KIND_LABELS, buildRecords, type RecordKind } from "../lib/records";
+import { tokenize } from "../lib/memory";
 
 function formatDateTime(ts: number) {
   return new Date(ts).toLocaleString("zh-TW", {
@@ -18,8 +20,13 @@ export default function Records() {
   const { items: logs } = useModuleLogs();
   const { items: checkIns } = useCheckIns();
   const { items: toughness } = useToughnessEntries();
+  const location = useLocation();
   const [kind, setKind] = useState<RecordKind | "all">("all");
-  const [query, setQuery] = useState("");
+  // Pre-filled when arriving from the home-screen search, so the query
+  // survives the navigation instead of having to be typed twice.
+  const [query, setQuery] = useState(
+    () => (location.state as { query?: string } | null)?.query ?? "",
+  );
   const [openId, setOpenId] = useState<string | null>(null);
 
   const all = useMemo(
@@ -27,16 +34,40 @@ export default function Records() {
     [logs, checkIns, toughness],
   );
 
-  const records = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    return all.filter((r) => {
-      if (kind !== "all" && r.kind !== kind) return false;
-      if (!q) return true;
-      const haystack = [r.summary, ...r.details.map((d) => `${d.label} ${d.value}`)]
-        .join(" ")
-        .toLowerCase();
-      return haystack.includes(q);
-    });
+  const { records, fuzzy } = useMemo(() => {
+    const byKind = all.filter((r) => kind === "all" || r.kind === kind);
+    const q = query.trim();
+    if (!q) return { records: byKind, fuzzy: false };
+
+    const haystackOf = (r: (typeof all)[number]) =>
+      [r.summary, ...r.details.map((d) => `${d.label} ${d.value}`)].join(" ");
+
+    // Exact substring first: predictable, and what someone typing a
+    // remembered word expects.
+    const exact = byKind.filter((r) => haystackOf(r).toLowerCase().includes(q.toLowerCase()));
+    if (exact.length > 0) return { records: exact, fuzzy: false };
+
+    // Nothing matched literally. Fall back to how much of the query a record
+    // covers, which finds entries whose wording is reordered or partially
+    // recalled ("報告 主管" against "主管...我的報告...") - cases substring
+    // cannot reach. Scored by query coverage rather than raw overlap so that
+    // a long query matching one incidental token does not qualify, and
+    // thresholded at half the query to keep it from matching nearly
+    // everything. Genuine synonyms ("老闆" for "主管") share no characters
+    // and are out of reach without a dictionary.
+    const queryTokens = tokenize(q);
+    if (queryTokens.size === 0) return { records: [], fuzzy: false };
+
+    const scored = byKind
+      .map((r) => {
+        const hay = tokenize(haystackOf(r));
+        let shared = 0;
+        for (const t of queryTokens) if (hay.has(t)) shared++;
+        return { r, score: shared / queryTokens.size };
+      })
+      .filter((s) => s.score >= 0.5)
+      .sort((a, b) => b.score - a.score);
+    return { records: scored.map((s) => s.r), fuzzy: scored.length > 0 };
   }, [all, kind, query]);
 
   const counts = useMemo(() => {
@@ -90,6 +121,11 @@ export default function Records() {
         </Card>
       ) : (
         <div className="space-y-2">
+          {fuzzy && (
+            <p className="text-xs text-amber-600 dark:text-amber-400">
+              沒有完全符合「{query}」的紀錄，以下是用字相近的結果
+            </p>
+          )}
           {records.map((r) => {
             const isOpen = openId === r.id;
             return (

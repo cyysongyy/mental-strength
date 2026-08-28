@@ -6,6 +6,7 @@ import { SYNCED_KEYS, useCheckIns, useSettings } from "../lib/storage";
 import { computeStreak } from "../lib/badges";
 import { PROVIDERS } from "../lib/ai";
 import {
+  changePassword,
   getCurrentUser,
   onAuthStateChange,
   pullAllFromCloud,
@@ -34,6 +35,10 @@ function CloudSyncCard({
   const [authBusy, setAuthBusy] = useState(false);
   const [syncBusy, setSyncBusy] = useState(false);
   const [syncMessage, setSyncMessage] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [pwBusy, setPwBusy] = useState(false);
+  const [pwMessage, setPwMessage] = useState("");
+  const [showPasswordForm, setShowPasswordForm] = useState(false);
   const configured = Boolean(settings.cloudSync.url && settings.cloudSync.anonKey);
 
   useEffect(() => {
@@ -94,6 +99,21 @@ function CloudSyncCard({
       setAuthError(e instanceof Error ? e.message : "發生錯誤，請稍後再試");
     } finally {
       setAuthBusy(false);
+    }
+  }
+
+  async function handleChangePassword() {
+    setPwMessage("");
+    setPwBusy(true);
+    try {
+      await changePassword(settings, newPassword);
+      setNewPassword("");
+      setShowPasswordForm(false);
+      setPwMessage("密碼已更新");
+    } catch (e) {
+      setPwMessage(e instanceof Error ? `更新失敗：${e.message}` : "更新失敗");
+    } finally {
+      setPwBusy(false);
     }
   }
 
@@ -185,6 +205,54 @@ function CloudSyncCard({
           {syncMessage && (
             <p className="text-xs text-slate-500 dark:text-slate-400">{syncMessage}</p>
           )}
+
+          <div className="pt-2 border-t border-slate-200 dark:border-slate-700 space-y-2">
+            {!showPasswordForm ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setShowPasswordForm(true);
+                  setPwMessage("");
+                }}
+                className="text-xs text-violet-600 dark:text-violet-300 underline underline-offset-2"
+              >
+                🔑 變更密碼
+              </button>
+            ) : (
+              <>
+                <p className="text-xs text-slate-500 dark:text-slate-400">
+                  密碼是唯一擋住別人讀取你紀錄的東西，建議設定 12 碼以上。
+                </p>
+                <input
+                  type="password"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  placeholder="新密碼（至少 6 碼，建議 12 碼以上）"
+                  autoComplete="new-password"
+                  className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent p-2.5 text-sm"
+                />
+                <div className="flex gap-2">
+                  <PrimaryButton
+                    onClick={handleChangePassword}
+                    disabled={pwBusy || newPassword.length < 6}
+                  >
+                    {pwBusy ? "更新中..." : "確認變更"}
+                  </PrimaryButton>
+                  <GhostButton
+                    onClick={() => {
+                      setShowPasswordForm(false);
+                      setNewPassword("");
+                    }}
+                  >
+                    取消
+                  </GhostButton>
+                </div>
+              </>
+            )}
+            {pwMessage && (
+              <p className="text-xs text-slate-500 dark:text-slate-400">{pwMessage}</p>
+            )}
+          </div>
         </div>
       ) : (
         <div className="space-y-2">

@@ -54,6 +54,7 @@ export const defaultSettings: Settings = {
   },
   name: "",
   cloudSync: { url: "", anonKey: "" },
+  fontScale: "standard",
 };
 
 function useStoredList<T>(key: string) {

@@ -53,7 +53,10 @@ function RecordSearchBar() {
           if (e.key === "Enter") submit();
         }}
         placeholder="🔍 搜尋過去的紀錄，例如「主管」「簡報」"
-        className="flex-1 rounded-xl border border-slate-300 dark:border-slate-700 bg-white/70 dark:bg-slate-900/60 p-2.5 text-sm"
+        /* min-w-0: an input carries an intrinsic minimum width that flex-1
+           alone will not shrink past, so at the largest text setting on a
+           narrow phone this row would otherwise push off screen. */
+        className="flex-1 min-w-0 rounded-xl border border-slate-300 dark:border-slate-700 bg-white/70 dark:bg-slate-900/60 p-2.5 text-sm"
       />
       <PrimaryButton onClick={submit} disabled={!q.trim()}>
         搜尋
@@ -104,8 +107,8 @@ export default function Home() {
 
   return (
     <div className="space-y-5">
-      <header className="flex items-start justify-between">
-        <div>
+      <header className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
           <p className="text-sm text-slate-500 dark:text-slate-400">
             {new Date().toLocaleDateString("zh-TW", {
               month: "long",
@@ -117,7 +120,10 @@ export default function Home() {
             心理肌肉鍛鍊{settings.name ? `，${settings.name}` : ""}
             <LeafAccent className="w-7 h-5" />
           </h1>
-          <p className="font-script text-xl text-violet-500 dark:text-violet-300 -mt-1 whitespace-nowrap">
+          {/* Allowed to wrap: it fits on one line at every normal width, and
+              at the largest text setting on a narrow phone wrapping is far
+              better than pushing the mode badge off the screen. */}
+          <p className="font-script text-xl text-violet-500 dark:text-violet-300 -mt-1">
             Stronger Mind, Better You.
           </p>
         </div>

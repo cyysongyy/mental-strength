@@ -107,6 +107,11 @@ function overlapScore(a: Set<string>, b: Set<string>): number {
   return shared / Math.min(a.size, b.size);
 }
 
+/** How alike two pieces of free text are, 0-1. Used to group recurring events. */
+export function textSimilarity(a: string, b: string): number {
+  return overlapScore(tokenize(a), tokenize(b));
+}
+
 export interface ScoredMemory {
   memory: MemoryItem;
   score: number;

@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
 import { Card, GhostButton, PrimaryButton, SectionTitle } from "../../components/Card";
 import ModeBadge, { NeedsApiKeyNotice } from "../../components/ModeBadge";
 import { TheoryNote } from "../../components/TheoryNote";
@@ -12,10 +12,10 @@ import { buildMemories, findRelatedMemories, memoriesForPrompt } from "../../lib
 import { hasActiveApiKey, reframeChat, type ChatTurn } from "../../lib/ai";
 import { MODULE_META } from "../../types";
 
-function LiteReframe({ onDone }: { onDone: () => void }) {
+function LiteReframe({ onDone, initialTrigger }: { onDone: () => void; initialTrigger: string }) {
   const { items: logs, add } = useModuleLogs();
   const [step, setStep] = useState(1);
-  const [trigger, setTrigger] = useState("");
+  const [trigger, setTrigger] = useState(initialTrigger);
   const [thought, setThought] = useState("");
   const [selectedDistortions, setSelectedDistortions] = useState<string[]>([]);
   const [forIt, setForIt] = useState("");
@@ -389,6 +389,10 @@ function ProReframe({ onDone }: { onDone: () => void }) {
 export default function CognitiveReframe() {
   const { settings } = useSettings();
   const navigate = useNavigate();
+  const location = useLocation();
+  // Set when arriving from an event in the training database, so a recurring
+  // situation starts pre-filled instead of from an empty box.
+  const initialTrigger = (location.state as { trigger?: string } | null)?.trigger ?? "";
 
   return (
     <div className="space-y-5">
@@ -401,7 +405,7 @@ export default function CognitiveReframe() {
       {settings.mode === "pro" ? (
         <ProReframe onDone={() => navigate("/modules")} />
       ) : (
-        <LiteReframe onDone={() => navigate("/modules")} />
+        <LiteReframe onDone={() => navigate("/modules")} initialTrigger={initialTrigger} />
       )}
     </div>
   );

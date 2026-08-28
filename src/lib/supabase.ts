@@ -62,6 +62,17 @@ export async function signIn(settings: Settings, email: string, password: string
   if (error) throw error;
 }
 
+/**
+ * The account password is the only thing standing between someone with the
+ * project URL (which is not secret) and this person's written record of their
+ * mental state, so changing it has to be possible without leaving the app.
+ */
+export async function changePassword(settings: Settings, newPassword: string) {
+  const client = await requireClient(settings);
+  const { error } = await client.auth.updateUser({ password: newPassword });
+  if (error) throw error;
+}
+
 export async function signOut(settings: Settings) {
   const client = await requireClient(settings);
   const { error } = await client.auth.signOut();

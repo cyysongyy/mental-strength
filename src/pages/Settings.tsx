@@ -18,6 +18,7 @@ import {
   SUPABASE_SCHEMA_SQL,
 } from "../lib/supabase";
 import { CrisisLink } from "../components/CrisisSupport";
+import { FONT_SCALES } from "../lib/fontScale";
 import { NOT_MEDICAL_DISCLAIMER } from "../lib/safety";
 import type { AIProvider } from "../types";
 
@@ -301,6 +302,48 @@ function CloudSyncCard({
   );
 }
 
+function FontScaleCard({
+  settings,
+  update,
+}: {
+  settings: ReturnType<typeof useSettings>["settings"];
+  update: ReturnType<typeof useSettings>["update"];
+}) {
+  return (
+    <Card className="space-y-4">
+      <SectionTitle
+        title="字體大小"
+        subtitle="整個 App 的文字都會跟著調整，隨時可以改回來"
+      />
+      <div className="flex gap-2">
+        {FONT_SCALES.map((s) => (
+          <button
+            key={s.id}
+            type="button"
+            onClick={() => update({ fontScale: s.id })}
+            aria-pressed={settings.fontScale === s.id}
+            className={`flex-1 rounded-xl border py-3 transition-colors ${
+              settings.fontScale === s.id
+                ? "border-violet-500 bg-violet-500/10 text-violet-600 dark:text-violet-300"
+                : "border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:border-violet-400"
+            }`}
+          >
+            {/* Each option previews its own size, so the choice can be made by
+                looking rather than by reading a percentage. */}
+            <span className="block font-medium" style={{ fontSize: `${s.percent}%` }}>
+              字
+            </span>
+            <span className="block text-xs mt-1">{s.label}</span>
+          </button>
+        ))}
+      </div>
+      <p className="text-sm text-slate-500 dark:text-slate-400">
+        這項設定只留在這台裝置上，不會同步到其他裝置。
+      </p>
+    </Card>
+  );
+}
+
 function BuildStamp() {
   const builtAt = new Date(__BUILD_TIME__);
   const builtAtLabel = Number.isNaN(builtAt.getTime())
@@ -382,6 +425,8 @@ export default function Settings() {
           </p>
         </div>
       </Card>
+
+      <FontScaleCard settings={settings} update={update} />
 
       <Card className="space-y-4">
         <SectionTitle title="暱稱" subtitle="用來在首頁跟你打招呼（選填）" />

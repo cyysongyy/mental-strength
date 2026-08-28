@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Card, GhostButton, PrimaryButton, SectionTitle } from "../../components/Card";
 import ModeBadge, { NeedsApiKeyNotice } from "../../components/ModeBadge";
@@ -10,10 +10,24 @@ import { CrisisSupport } from "../../components/CrisisSupport";
 import { detectsCrisis } from "../../lib/safety";
 import { formatImplementationIntention } from "../../lib/implementationIntention";
 import { DISTORTIONS, REPLACEMENT_TEMPLATES } from "../../lib/distortions";
-import { uid, useModuleLogs, useSettings } from "../../lib/storage";
+import { uid, useDraft, useModuleLogs, useSettings } from "../../lib/storage";
+import { DraftResume } from "../../components/DraftResume";
 import { buildMemories, findRelatedMemories, memoriesForPrompt } from "../../lib/memory";
 import { hasActiveApiKey, reframeChat, type ChatTurn } from "../../lib/ai";
 import { MODULE_META } from "../../types";
+
+interface ReframeDraft {
+  step: number;
+  trigger: string;
+  thought: string;
+  selectedDistortions: string[];
+  forIt: string;
+  againstIt: string;
+  replacement: string;
+  ifSituation: string;
+  thenAction: string;
+  before: number;
+}
 
 function LiteReframe({ onDone, initialTrigger }: { onDone: () => void; initialTrigger: string }) {
   const { items: logs, add } = useModuleLogs();
@@ -52,6 +66,60 @@ function LiteReframe({ onDone, initialTrigger }: { onDone: () => void; initialTr
   const showCrisis =
     !crisisDismissed && detectsCrisis(`${trigger} ${thought} ${forIt} ${againstIt}`);
 
+  const { draft, save: saveDraft, clear: clearDraft, dismiss: dismissDraft } =
+    useDraft<ReframeDraft>("reframe");
+  const [resumed, setResumed] = useState(false);
+
+  // Persist whatever has been entered so far, so closing the app partway
+  // through does not throw the work away.
+  useEffect(() => {
+    if (submitted) return;
+    const hasContent = [trigger, thought, forIt, againstIt, replacement].some((v) => v.trim());
+    if (!hasContent) return;
+    saveDraft({
+      step,
+      trigger,
+      thought,
+      selectedDistortions,
+      forIt,
+      againstIt,
+      replacement,
+      ifSituation,
+      thenAction,
+      before,
+    });
+  }, [
+    submitted,
+    step,
+    trigger,
+    thought,
+    selectedDistortions,
+    forIt,
+    againstIt,
+    replacement,
+    ifSituation,
+    thenAction,
+    before,
+    saveDraft,
+  ]);
+
+  function resumeDraft() {
+    if (!draft) return;
+    const d = draft.data;
+    setTrigger(d.trigger);
+    setThought(d.thought);
+    setSelectedDistortions(d.selectedDistortions);
+    setForIt(d.forIt);
+    setAgainstIt(d.againstIt);
+    setReplacement(d.replacement);
+    setIfSituation(d.ifSituation);
+    setThenAction(d.thenAction);
+    setBefore(d.before);
+    setStep(d.step);
+    setResumed(true);
+    dismissDraft();
+  }
+
   function handleSubmit() {
     add({
       type: "reframe",
@@ -66,6 +134,8 @@ function LiteReframe({ onDone, initialTrigger }: { onDone: () => void; initialTr
       implementationIntention: formatImplementationIntention(ifSituation, thenAction),
       intensity: { before, after },
     });
+    // The practice is now a real record, so the draft has served its purpose.
+    clearDraft();
     setSubmitted(true);
   }
 
@@ -103,6 +173,14 @@ function LiteReframe({ onDone, initialTrigger }: { onDone: () => void; initialTr
   return (
     <Card className="space-y-5">
       {showCrisis && <CrisisSupport onDismiss={() => setCrisisDismissed(true)} />}
+      {draft && !resumed && (
+        <DraftResume
+          updatedAt={draft.updatedAt}
+          preview={draft.data.trigger || draft.data.thought}
+          onResume={resumeDraft}
+          onDiscard={clearDraft}
+        />
+      )}
       {step === 1 && (
         <>
           <SectionTitle title="Step 1 · 觸發事件" subtitle="發生了什麼事，讓你有這樣的感覺？" />

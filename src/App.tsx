@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Route, Routes, useLocation } from "react-router-dom";
 import ErrorBoundary from "./components/ErrorBoundary";
 import NavBar from "./components/NavBar";
@@ -8,12 +9,22 @@ import CirclesOfControl from "./pages/modules/CirclesOfControl";
 import EmotionalTolerance from "./pages/modules/EmotionalTolerance";
 import SOS from "./pages/SOS";
 import Memory from "./pages/Memory";
+import Records from "./pages/Records";
 import Report from "./pages/Report";
 import Settings from "./pages/Settings";
 import Toughness from "./pages/Toughness";
+import { useSettings } from "./lib/storage";
+import { applyFontScale } from "./lib/fontScale";
 
 export default function App() {
   const location = useLocation();
+  const { settings } = useSettings();
+
+  // main.tsx applies the stored scale before mount; this keeps it in step
+  // afterwards, so changing it in 我的 takes effect on the spot.
+  useEffect(() => {
+    applyFontScale(settings.fontScale);
+  }, [settings.fontScale]);
 
   return (
     <div className="min-h-screen pb-20">
@@ -30,6 +41,7 @@ export default function App() {
             <Route path="/sos" element={<SOS />} />
             <Route path="/report" element={<Report />} />
             <Route path="/memory" element={<Memory />} />
+            <Route path="/records" element={<Records />} />
             <Route path="/toughness" element={<Toughness />} />
             <Route path="/settings" element={<Settings />} />
           </Routes>

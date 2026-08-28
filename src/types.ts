@@ -131,6 +131,10 @@ export type AppMode = "lite" | "pro";
 
 export type AIProvider = "anthropic" | "google" | "nvidia" | "openai";
 
+/** Root text-size preference. Kept device-local - screen size and eyesight
+ * conditions differ per device, so it is not something to sync. */
+export type FontScale = "standard" | "large" | "xlarge";
+
 export interface Settings {
   mode: AppMode;
   provider: AIProvider;
@@ -138,6 +142,7 @@ export interface Settings {
   models: Record<AIProvider, string>;
   name: string;
   cloudSync: { url: string; anonKey: string };
+  fontScale: FontScale;
 }
 
 export interface WeeklyReport {

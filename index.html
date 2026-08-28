@@ -44,6 +44,32 @@
         window.addEventListener("error", function (e) {
           if (!lastError && e && e.message) lastError = e.message;
         });
+        // A failed <script>/<link> load fires an "error" event that carries no
+        // .message and does not bubble, so the listener above never sees it -
+        // which is how a stale index.html pointing at a deleted asset produced
+        // a fallback screen with no explanation at all. Catch those in the
+        // capture phase and record which URL actually failed.
+        // Track a failed script separately from any other failed resource: an
+        // optional stylesheet (the Google Fonts link) failing is cosmetic and
+        // must not mask the script failure that actually left the page blank.
+        var failedScript = "";
+        var failedResource = "";
+        window.addEventListener(
+          "error",
+          function (e) {
+            var el = e && e.target;
+            if (!el || el === window) return;
+            var src = el.src || el.href;
+            if (!src) return;
+            var name = String(src).split("/").pop();
+            if (el.tagName === "SCRIPT") {
+              if (!failedScript) failedScript = name;
+            } else if (!failedResource) {
+              failedResource = name;
+            }
+          },
+          true,
+        );
         window.addEventListener("unhandledrejection", function (e) {
           if (!lastError) {
             var reason = e && e.reason;
@@ -80,18 +106,31 @@
           // diagnosable instead of just saying "something went wrong".
           var root = document.getElementById("root");
           if (root) {
+            var detail = failedScript
+              ? "載入失敗：" + failedScript
+              : lastError || (failedResource ? "載入失敗：" + failedResource : "");
             root.innerHTML =
               '<div style="min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;font-family:system-ui,-apple-system,sans-serif;padding:24px;text-align:center;background:#f6f7fb;color:#334155;">' +
               "<p>頁面載入異常，請重新整理</p>" +
-              (lastError
+              (detail
                 ? '<p style="font-size:12px;color:#94a3b8;max-width:320px;word-break:break-all;">' +
-                  lastError.replace(/</g, "&lt;") +
+                  detail.replace(/</g, "&lt;") +
                   "</p>"
                 : "") +
-              '<button onclick="sessionStorage.removeItem(\'' +
-              RETRY_KEY +
-              '\');location.reload()" style="padding:10px 24px;border-radius:12px;background:#7c3aed;color:#fff;border:none;font-size:14px;cursor:pointer;">重新整理</button>' +
+              '<button id="ms-retry" style="padding:10px 24px;border-radius:12px;background:#7c3aed;color:#fff;border:none;font-size:14px;cursor:pointer;">重新整理</button>' +
               "</div>";
+            var retry = document.getElementById("ms-retry");
+            if (retry) {
+              retry.addEventListener("click", function () {
+                // A plain location.reload() can be answered from the very
+                // cache that is serving the broken page, so the button would
+                // just redisplay this screen. Go through a fresh URL instead.
+                sessionStorage.removeItem(RETRY_KEY);
+                location.replace(
+                  location.pathname + "?_r=" + Date.now() + location.hash,
+                );
+              });
+            }
           }
         }
         check();

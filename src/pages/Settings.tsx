@@ -191,6 +191,13 @@ function CloudSyncCard({
             value={authEmail}
             onChange={(e) => setAuthEmail(e.target.value)}
             placeholder="Email"
+            // Mobile keyboards otherwise capitalize the first letter and can
+            // append a trailing space via autocorrect, which turns a correct
+            // address into "Invalid login credentials".
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
+            autoComplete="email"
             className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent p-2.5 text-sm"
           />
           <input

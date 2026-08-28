@@ -23,7 +23,11 @@ let cached: { url: string; anonKey: string; clientPromise: Promise<SupabaseClien
 // login through one would never be seen by a listener registered on the
 // other, leaving the UI stuck showing "logged out" even after a real login.
 export async function getSupabaseClient(settings: Settings): Promise<SupabaseClient | null> {
-  const { url, anonKey } = settings.cloudSync;
+  // Pasting on mobile very often carries a trailing space or newline; trim on
+  // read so an already-saved value with stray whitespace still works without
+  // the user having to notice and retype it.
+  const url = settings.cloudSync.url.trim();
+  const anonKey = settings.cloudSync.anonKey.trim();
   if (!url || !anonKey) return null;
   if (!cached || cached.url !== url || cached.anonKey !== anonKey) {
     cached = {
@@ -45,13 +49,16 @@ async function requireClient(settings: Settings): Promise<SupabaseClient> {
 
 export async function signUp(settings: Settings, email: string, password: string) {
   const client = await requireClient(settings);
-  const { error } = await client.auth.signUp({ email, password });
+  const { error } = await client.auth.signUp({ email: email.trim(), password });
   if (error) throw error;
 }
 
 export async function signIn(settings: Settings, email: string, password: string) {
   const client = await requireClient(settings);
-  const { error } = await client.auth.signInWithPassword({ email, password });
+  const { error } = await client.auth.signInWithPassword({
+    email: email.trim(),
+    password,
+  });
   if (error) throw error;
 }
 

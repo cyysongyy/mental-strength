@@ -191,6 +191,13 @@ function CloudSyncCard({
             value={authEmail}
             onChange={(e) => setAuthEmail(e.target.value)}
             placeholder="Email"
+            // Mobile keyboards otherwise capitalize the first letter and can
+            // append a trailing space via autocorrect, which turns a correct
+            // address into "Invalid login credentials".
+            autoCapitalize="none"
+            autoCorrect="off"
+            spellCheck={false}
+            autoComplete="email"
             className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent p-2.5 text-sm"
           />
           <input
@@ -221,6 +228,40 @@ function CloudSyncCard({
         Row Level Security 保護，只有你登入的帳號能讀取。
       </p>
     </Card>
+  );
+}
+
+function BuildStamp() {
+  const builtAt = new Date(__BUILD_TIME__);
+  const builtAtLabel = Number.isNaN(builtAt.getTime())
+    ? __BUILD_TIME__
+    : builtAt.toLocaleString("zh-TW", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+      });
+
+  // A plain reload can be served straight from cache, which is exactly the
+  // failure this stamp exists to make visible - so force a fresh fetch.
+  function forceRefresh() {
+    location.replace(`${location.pathname}?_v=${Date.now()}${location.hash}`);
+  }
+
+  return (
+    <div className="pb-2 text-center space-y-2">
+      <p className="text-xs text-slate-400 dark:text-slate-500">
+        版本 {__BUILD_COMMIT__} ・ 更新於 {builtAtLabel}
+      </p>
+      <button
+        type="button"
+        onClick={forceRefresh}
+        className="text-xs text-violet-500 dark:text-violet-400 underline underline-offset-2"
+      >
+        重新載入最新版本
+      </button>
+    </div>
   );
 }
 
@@ -374,6 +415,8 @@ export default function Settings() {
           </div>
         )}
       </Card>
+
+      <BuildStamp />
     </div>
   );
 }

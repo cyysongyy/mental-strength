@@ -99,6 +99,25 @@ function ToughnessCard({ entries }: { entries: ToughnessEntry[] }) {
   );
 }
 
+function MemoryCard({ count }: { count: number }) {
+  return (
+    <Card className="space-y-3">
+      <div className="flex items-center gap-1.5">
+        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">🧠 記憶庫</h2>
+        <LeafAccent className="w-6 h-4" />
+      </div>
+      <p className="text-sm text-slate-500 dark:text-slate-400">
+        {count === 0
+          ? "完成練習後，你的問題與有效解法會自動累積成個人資料庫，下次遇到類似狀況時主動提醒你。"
+          : `已累積 ${count} 筆問題與解答。下次遇到類似狀況時，App 會自動把當時有效的做法找出來給你。`}
+      </p>
+      <Link to="/memory">
+        <PrimaryButton className="w-full">開啟記憶庫</PrimaryButton>
+      </Link>
+    </Card>
+  );
+}
+
 function LiteReport() {
   const { items: checkIns } = useCheckIns();
   const { items: logs } = useModuleLogs();
@@ -130,6 +149,8 @@ function LiteReport() {
       </Card>
 
       <ToughnessCard entries={toughnessEntries} />
+
+      <MemoryCard count={logs.length} />
 
       <Card>
         <div className="flex items-center gap-1.5 mb-3">

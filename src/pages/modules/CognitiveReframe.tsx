@@ -1,17 +1,19 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, GhostButton, PrimaryButton, SectionTitle } from "../../components/Card";
 import ModeBadge, { NeedsApiKeyNotice } from "../../components/ModeBadge";
 import { TheoryNote } from "../../components/TheoryNote";
 import { ImplementationIntention } from "../../components/ImplementationIntention";
+import { MemoryHints } from "../../components/MemoryHints";
 import { formatImplementationIntention } from "../../lib/implementationIntention";
 import { DISTORTIONS, REPLACEMENT_TEMPLATES } from "../../lib/distortions";
 import { uid, useModuleLogs, useSettings } from "../../lib/storage";
+import { buildMemories, findRelatedMemories, memoriesForPrompt } from "../../lib/memory";
 import { hasActiveApiKey, reframeChat, type ChatTurn } from "../../lib/ai";
 import { MODULE_META } from "../../types";
 
 function LiteReframe({ onDone }: { onDone: () => void }) {
-  const { add } = useModuleLogs();
+  const { items: logs, add } = useModuleLogs();
   const [step, setStep] = useState(1);
   const [trigger, setTrigger] = useState("");
   const [thought, setThought] = useState("");
@@ -31,6 +33,12 @@ function LiteReframe({ onDone }: { onDone: () => void }) {
 
   const suggestions = selectedDistortions.flatMap(
     (id) => REPLACEMENT_TEMPLATES[id] ?? [],
+  );
+
+  const memories = useMemo(() => buildMemories(logs), [logs]);
+  const related = useMemo(
+    () => findRelatedMemories(`${trigger} ${thought}`, memories),
+    [trigger, thought, memories],
   );
 
   function handleSubmit() {
@@ -116,6 +124,14 @@ function LiteReframe({ onDone }: { onDone: () => void }) {
             rows={3}
             className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent p-3 text-sm"
             placeholder="例如：我完全不適合這份工作"
+          />
+          <MemoryHints
+            matches={related}
+            onUseAnswer={(answer) => {
+              setReplacement(answer);
+              setStep(5);
+            }}
+            useLabel="直接沿用上次的替代想法 →"
           />
           <div className="flex gap-2">
             <GhostButton onClick={() => setStep(1)}>上一步</GhostButton>
@@ -208,6 +224,7 @@ function LiteReframe({ onDone }: { onDone: () => void }) {
             title="Step 4 · 點擊替換卡片"
             subtitle="選一句貼近你狀況的替代想法，或自己編輯"
           />
+          <MemoryHints matches={related} onUseAnswer={setReplacement} />
           <div className="space-y-2">
             {suggestions.length === 0 && (
               <p className="text-sm text-slate-400">
@@ -261,11 +278,13 @@ function LiteReframe({ onDone }: { onDone: () => void }) {
 
 function ProReframe({ onDone }: { onDone: () => void }) {
   const { settings } = useSettings();
-  const { add } = useModuleLogs();
+  const { items: logs, add } = useModuleLogs();
   const [input, setInput] = useState("");
   const [history, setHistory] = useState<ChatTurn[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+
+  const memories = useMemo(() => buildMemories(logs), [logs]);
 
   async function send() {
     if (!input.trim() || loading) return;
@@ -275,7 +294,12 @@ function ProReframe({ onDone }: { onDone: () => void }) {
     setLoading(true);
     setError("");
     try {
-      const reply = await reframeChat(settings, nextHistory);
+      // Give the coach what worked for this person before, so a recurring
+      // problem continues from last time instead of starting over.
+      const context = memoriesForPrompt(
+        findRelatedMemories(nextHistory.map((h) => h.content).join(" "), memories),
+      );
+      const reply = await reframeChat(settings, nextHistory, context);
       setHistory([...nextHistory, { role: "assistant", content: reply }]);
     } catch (e) {
       setError(e instanceof Error ? e.message : "發生錯誤，請稍後再試");

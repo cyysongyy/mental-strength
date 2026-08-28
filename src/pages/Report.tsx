@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import { Card, PrimaryButton, SectionTitle } from "../components/Card";
+import { Card, GhostButton, PrimaryButton, SectionTitle } from "../components/Card";
 import ModeBadge, { NeedsApiKeyNotice } from "../components/ModeBadge";
 import { LeafAccent } from "../components/Illustrations";
 import {
@@ -113,6 +113,11 @@ function MemoryCard({ count }: { count: number }) {
       </p>
       <Link to="/memory">
         <PrimaryButton className="w-full">開啟訓練資料庫</PrimaryButton>
+      </Link>
+      {/* The event view summarises and groups; this is the way back to any
+          individual save with every field it actually holds. */}
+      <Link to="/records" className="block">
+        <GhostButton className="w-full">🗂️ 查看完整紀錄（逐筆）</GhostButton>
       </Link>
     </Card>
   );

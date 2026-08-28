@@ -8,6 +8,7 @@ import CirclesOfControl from "./pages/modules/CirclesOfControl";
 import EmotionalTolerance from "./pages/modules/EmotionalTolerance";
 import SOS from "./pages/SOS";
 import Memory from "./pages/Memory";
+import Records from "./pages/Records";
 import Report from "./pages/Report";
 import Settings from "./pages/Settings";
 import Toughness from "./pages/Toughness";
@@ -30,6 +31,7 @@ export default function App() {
             <Route path="/sos" element={<SOS />} />
             <Route path="/report" element={<Report />} />
             <Route path="/memory" element={<Memory />} />
+            <Route path="/records" element={<Records />} />
             <Route path="/toughness" element={<Toughness />} />
             <Route path="/settings" element={<Settings />} />
           </Routes>

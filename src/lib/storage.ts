@@ -14,6 +14,7 @@ export const KEYS = {
   reports: "ms.reports.v1",
   badges: "ms.badges.v1",
   toughness: "ms.toughness.v1",
+  drafts: "ms.drafts.v1",
 } as const;
 
 export function readJSON<T>(key: string, fallback: T): T {
@@ -134,6 +135,51 @@ export function useSettings() {
   }, []);
 
   return { settings, update };
+}
+
+/**
+ * Work-in-progress form state for one module, so a session interrupted
+ * partway through is not simply lost.
+ *
+ * Drafts stay on the device rather than joining SYNCED_KEYS: they change on
+ * every keystroke, and pushing each one to the cloud would mean a network
+ * write per character. They are also intentionally kept out of the training
+ * database until the practice is completed - a half-written thought is not a
+ * result, and letting it in would distort the event grouping and the
+ * effectiveness figures.
+ */
+export function useDraft<T extends object>(moduleId: string) {
+  const read = useCallback(
+    () => readJSON<Record<string, { updatedAt: number; data: T }>>(KEYS.drafts, {}),
+    [],
+  );
+  const [draft, setDraft] = useState<{ updatedAt: number; data: T } | null>(
+    () => read()[moduleId] ?? null,
+  );
+
+  const save = useCallback(
+    (data: T) => {
+      const all = read();
+      all[moduleId] = { updatedAt: Date.now(), data };
+      // Written directly rather than through writeJSON: the "ms-storage"
+      // event it broadcasts drives cloud sync and list re-reads, neither of
+      // which should fire on every keystroke.
+      localStorage.setItem(KEYS.drafts, JSON.stringify(all));
+    },
+    [moduleId, read],
+  );
+
+  const clear = useCallback(() => {
+    const all = read();
+    delete all[moduleId];
+    localStorage.setItem(KEYS.drafts, JSON.stringify(all));
+    setDraft(null);
+  }, [moduleId, read]);
+
+  /** Dismiss the resume prompt without deleting what is stored. */
+  const dismiss = useCallback(() => setDraft(null), []);
+
+  return { draft, save, clear, dismiss };
 }
 
 export function useUnlockedBadges() {

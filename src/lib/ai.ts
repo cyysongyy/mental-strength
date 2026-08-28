@@ -216,8 +216,15 @@ const REFRAME_SYSTEM_PROMPT = `你是一位溫暖但直接的「心理素質教�
 4. 語氣像信任的教練，簡短有力，使用繁體中文，總長度控制在 200 字以內，可以用條列。
 5. 只有在對話進行到後段、使用者已經回應過追問後，才給一句簡短的、可以立刻練習的替代想法草稿，標記為「可以試試看這樣想：」；對話剛開始時不要直接給替代想法。`;
 
-export async function reframeChat(settings: Settings, history: ChatTurn[]): Promise<string> {
-  return chatComplete(settings, REFRAME_SYSTEM_PROMPT, history, 800);
+export async function reframeChat(
+  settings: Settings,
+  history: ChatTurn[],
+  memoryContext = "",
+): Promise<string> {
+  const system = memoryContext
+    ? `${REFRAME_SYSTEM_PROMPT}\n\n${memoryContext}`
+    : REFRAME_SYSTEM_PROMPT;
+  return chatComplete(settings, system, history, 800);
 }
 
 export async function decomposeCircles(

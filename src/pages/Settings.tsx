@@ -16,6 +16,8 @@ import {
   signUp,
   SUPABASE_SCHEMA_SQL,
 } from "../lib/supabase";
+import { CrisisLink } from "../components/CrisisSupport";
+import { NOT_MEDICAL_DISCLAIMER } from "../lib/safety";
 import type { AIProvider } from "../types";
 
 function CloudSyncCard({
@@ -414,6 +416,14 @@ export default function Settings() {
             </div>
           </div>
         )}
+      </Card>
+
+      <Card className="space-y-3">
+        <SectionTitle title="關於這個 App" subtitle="使用前請了解它能與不能做什麼" />
+        <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
+          {NOT_MEDICAL_DISCLAIMER}
+        </p>
+        <CrisisLink />
       </Card>
 
       <BuildStamp />

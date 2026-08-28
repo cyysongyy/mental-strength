@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import { Card, PrimaryButton, SectionTitle } from "../components/Card";
 import ModeBadge, { NeedsApiKeyNotice } from "../components/ModeBadge";
 import { TheoryNote } from "../components/TheoryNote";
+import { CrisisLink, CrisisSupport } from "../components/CrisisSupport";
+import { detectsCrisis } from "../lib/safety";
 import { uid, useModuleLogs, useSettings } from "../lib/storage";
 import { generateGroundingScript, hasActiveApiKey } from "../lib/ai";
 
@@ -156,6 +158,7 @@ function ProSOS() {
         placeholder="例如：等一下要上台簡報，超級緊張"
         className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent p-3 text-sm"
       />
+      {detectsCrisis(context) && <CrisisSupport />}
       {error && <p className="text-sm text-red-500">{error}</p>}
       <PrimaryButton onClick={submit} disabled={loading || !context.trim()} className="w-full">
         {loading ? "生成中..." : "生成專屬引導詞"}
@@ -179,6 +182,9 @@ export default function SOS() {
         <ModeBadge mode={settings.mode} />
       </header>
       {settings.mode === "pro" ? <ProSOS /> : <LiteSOS />}
+      {/* This is the page people reach when they are already struggling, so
+          real human help stays one tap away regardless of what they typed. */}
+      <CrisisLink />
     </div>
   );
 }

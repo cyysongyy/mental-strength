@@ -6,6 +6,8 @@ import { TheoryNote } from "../../components/TheoryNote";
 import { ImplementationIntention } from "../../components/ImplementationIntention";
 import { MemoryHints } from "../../components/MemoryHints";
 import { IntensityDelta, IntensityScale } from "../../components/IntensityScale";
+import { CrisisSupport } from "../../components/CrisisSupport";
+import { detectsCrisis } from "../../lib/safety";
 import { formatImplementationIntention } from "../../lib/implementationIntention";
 import { DISTORTIONS, REPLACEMENT_TEMPLATES } from "../../lib/distortions";
 import { uid, useModuleLogs, useSettings } from "../../lib/storage";
@@ -44,6 +46,12 @@ function LiteReframe({ onDone, initialTrigger }: { onDone: () => void; initialTr
     [trigger, thought, memories],
   );
 
+  // Watch everything the person has written in this session, not just the
+  // current field - risk language may have appeared a step ago.
+  const [crisisDismissed, setCrisisDismissed] = useState(false);
+  const showCrisis =
+    !crisisDismissed && detectsCrisis(`${trigger} ${thought} ${forIt} ${againstIt}`);
+
   function handleSubmit() {
     add({
       type: "reframe",
@@ -65,6 +73,7 @@ function LiteReframe({ onDone, initialTrigger }: { onDone: () => void; initialTr
     return (
       <Card className="space-y-3">
         <SectionTitle title="模組化即時反饋" />
+        {showCrisis && <CrisisSupport onDismiss={() => setCrisisDismissed(true)} />}
         <IntensityDelta before={before} after={after} />
         <p className="text-slate-700 dark:text-slate-200">
           你辨識出了 <b>{selectedDistortions.length}</b> 個消極思維模式，並完成了事實核查。
@@ -93,6 +102,7 @@ function LiteReframe({ onDone, initialTrigger }: { onDone: () => void; initialTr
 
   return (
     <Card className="space-y-5">
+      {showCrisis && <CrisisSupport onDismiss={() => setCrisisDismissed(true)} />}
       {step === 1 && (
         <>
           <SectionTitle title="Step 1 · 觸發事件" subtitle="發生了什麼事，讓你有這樣的感覺？" />
@@ -303,6 +313,11 @@ function ProReframe({ onDone }: { onDone: () => void }) {
 
   const memories = useMemo(() => buildMemories(logs), [logs]);
 
+  const [crisisDismissed, setCrisisDismissed] = useState(false);
+  const showCrisis =
+    !crisisDismissed &&
+    detectsCrisis([...history.map((h) => h.content), input].join(" "));
+
   async function send() {
     if (!input.trim() || loading) return;
     const nextHistory: ChatTurn[] = [...history, { role: "user", content: input }];
@@ -353,6 +368,7 @@ function ProReframe({ onDone }: { onDone: () => void }) {
         title="AI 蘇格拉底對話教練"
         subtitle="自由寫下讓你困擾的事件或想法，AI 教練會引導你重新檢視。"
       />
+      {showCrisis && <CrisisSupport onDismiss={() => setCrisisDismissed(true)} />}
       <div className="space-y-3 max-h-96 overflow-y-auto">
         {history.map((h, i) => (
           <div

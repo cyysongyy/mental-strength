@@ -231,6 +231,7 @@ function summarizeLogsForAI(
           thought: l.automaticThought,
           distortions: l.distortions,
           aiDialogue: l.aiDialogue?.map((d) => d.text),
+          intensity: l.intensity,
         };
       if (l.type === "circles")
         return { ...base, itemsCount: l.items.length, aiBreakdown: l.aiBreakdown };

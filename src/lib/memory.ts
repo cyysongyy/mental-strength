@@ -13,6 +13,9 @@ export interface MemoryItem {
   problem: string;
   answer: string;
   plan?: string;
+  /** Distress before/after this practice, when it was rated. */
+  before?: number;
+  after?: number;
 }
 
 function lastCoachLine(dialogue?: { role: "coach" | "user"; text: string }[]) {
@@ -24,7 +27,12 @@ function lastCoachLine(dialogue?: { role: "coach" | "user"; text: string }[]) {
 }
 
 function toMemory(log: ModuleLogEntry): MemoryItem | null {
-  const base = { id: log.id, timestamp: log.timestamp };
+  const base = {
+    id: log.id,
+    timestamp: log.timestamp,
+    before: log.intensity?.before,
+    after: log.intensity?.after,
+  };
 
   if (log.type === "reframe") {
     const problem = [log.trigger, log.automaticThought].filter(Boolean).join(" — ");

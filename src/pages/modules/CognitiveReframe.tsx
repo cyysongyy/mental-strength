@@ -5,6 +5,7 @@ import ModeBadge, { NeedsApiKeyNotice } from "../../components/ModeBadge";
 import { TheoryNote } from "../../components/TheoryNote";
 import { ImplementationIntention } from "../../components/ImplementationIntention";
 import { MemoryHints } from "../../components/MemoryHints";
+import { IntensityDelta, IntensityScale } from "../../components/IntensityScale";
 import { formatImplementationIntention } from "../../lib/implementationIntention";
 import { DISTORTIONS, REPLACEMENT_TEMPLATES } from "../../lib/distortions";
 import { uid, useModuleLogs, useSettings } from "../../lib/storage";
@@ -23,6 +24,8 @@ function LiteReframe({ onDone, initialTrigger }: { onDone: () => void; initialTr
   const [replacement, setReplacement] = useState("");
   const [ifSituation, setIfSituation] = useState("");
   const [thenAction, setThenAction] = useState("");
+  const [before, setBefore] = useState(5);
+  const [after, setAfter] = useState(5);
   const [submitted, setSubmitted] = useState(false);
 
   function toggleDistortion(id: string) {
@@ -53,6 +56,7 @@ function LiteReframe({ onDone, initialTrigger }: { onDone: () => void; initialTr
       replacement,
       mode: "lite",
       implementationIntention: formatImplementationIntention(ifSituation, thenAction),
+      intensity: { before, after },
     });
     setSubmitted(true);
   }
@@ -61,6 +65,7 @@ function LiteReframe({ onDone, initialTrigger }: { onDone: () => void; initialTr
     return (
       <Card className="space-y-3">
         <SectionTitle title="模組化即時反饋" />
+        <IntensityDelta before={before} after={after} />
         <p className="text-slate-700 dark:text-slate-200">
           你辨識出了 <b>{selectedDistortions.length}</b> 個消極思維模式，並完成了事實核查。
         </p>
@@ -101,6 +106,12 @@ function LiteReframe({ onDone, initialTrigger }: { onDone: () => void; initialTr
             rows={3}
             className="w-full rounded-xl border border-slate-300 dark:border-slate-700 bg-transparent p-3 text-sm"
             placeholder="例如：主管在會議上指出我的報告有問題"
+          />
+          <IntensityScale
+            label="現在這件事讓你有多不舒服？"
+            hint="練習完會再問一次，用來看出這個方法對你有沒有效"
+            value={before}
+            onChange={setBefore}
           />
           <PrimaryButton
             onClick={() => setStep(2)}
@@ -259,6 +270,12 @@ function LiteReframe({ onDone, initialTrigger }: { onDone: () => void; initialTr
             onActionChange={setThenAction}
             situationPlaceholder="類似的想法又出現時"
             actionPlaceholder="停下來問自己有什麼證據"
+          />
+          <IntensityScale
+            label="現在再看這件事，感覺有多強烈？"
+            hint={`練習前你給的是 ${before} 分`}
+            value={after}
+            onChange={setAfter}
           />
           <div className="flex gap-2">
             <GhostButton onClick={() => setStep(4)}>上一步</GhostButton>

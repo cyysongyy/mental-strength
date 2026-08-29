@@ -5,8 +5,10 @@ import ModeBadge, { NeedsApiKeyNotice } from "../../components/ModeBadge";
 import { TheoryNote } from "../../components/TheoryNote";
 import { ImplementationIntention } from "../../components/ImplementationIntention";
 import { formatImplementationIntention } from "../../lib/implementationIntention";
-import { uid, useModuleLogs, useSettings } from "../../lib/storage";
+import { uid, useDraft, useModuleLogs, useSettings } from "../../lib/storage";
 import { hasActiveApiKey, planMicroExposure } from "../../lib/ai";
+import { DraftResume } from "../../components/DraftResume";
+import { EventPicker } from "../../components/EventPicker";
 import { MODULE_META } from "../../types";
 
 const CHECKLIST = [
@@ -22,16 +24,31 @@ function formatTime(sec: number) {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
+interface ToleranceDraft {
+  duration: 180 | 300;
+  remaining: number;
+  checked: boolean[];
+  fear: string;
+  ifSituation: string;
+  thenAction: string;
+}
+
 function LiteTolerance({ onDone }: { onDone: () => void }) {
-  const { add } = useModuleLogs();
+  const { items: logs, add } = useModuleLogs();
   const [duration, setDuration] = useState<180 | 300>(180);
   const [remaining, setRemaining] = useState(180);
   const [running, setRunning] = useState(false);
   const [finished, setFinished] = useState(false);
   const [checked, setChecked] = useState<boolean[]>(CHECKLIST.map(() => false));
+  const [fear, setFear] = useState("");
   const [ifSituation, setIfSituation] = useState("");
   const [thenAction, setThenAction] = useState("");
   const intervalRef = useRef<number | null>(null);
+  const { draft, save: saveDraft, clear: clearDraft, dismiss: dismissDraft } =
+    useDraft<ToleranceDraft>("tolerance");
+  const [resumed, setResumed] = useState(false);
+
+  const elapsed = duration - remaining;
 
   useEffect(() => {
     if (running) {
@@ -52,6 +69,28 @@ function LiteTolerance({ onDone }: { onDone: () => void }) {
     };
   }, [running]);
 
+  // Persist the attempt as it happens. The timer is deliberately not
+  // restarted on resume - it comes back paused, so returning to the app does
+  // not silently run time down while the person reads the screen.
+  useEffect(() => {
+    if (elapsed === 0 && !fear.trim()) return;
+    saveDraft({ duration, remaining, checked, fear, ifSituation, thenAction });
+  }, [duration, remaining, elapsed, checked, fear, ifSituation, thenAction, saveDraft]);
+
+  function resumeDraft() {
+    if (!draft) return;
+    const d = draft.data;
+    setDuration(d.duration);
+    setRemaining(d.remaining);
+    setChecked(d.checked);
+    setFear(d.fear);
+    setIfSituation(d.ifSituation);
+    setThenAction(d.thenAction);
+    setFinished(d.remaining === 0);
+    setResumed(true);
+    dismissDraft();
+  }
+
   function selectDuration(d: 180 | 300) {
     setDuration(d);
     setRemaining(d);
@@ -63,12 +102,15 @@ function LiteTolerance({ onDone }: { onDone: () => void }) {
       type: "tolerance",
       id: uid(),
       timestamp: Date.now(),
-      fear: "",
-      durationSec: duration,
+      fear,
+      // Seconds actually endured, not the length that was picked - stopping
+      // at 1:20 of a 5-minute challenge is a 1:20 record, not a 5-minute one.
+      durationSec: elapsed,
       completed: finished,
       mode: "lite",
       implementationIntention: formatImplementationIntention(ifSituation, thenAction),
     });
+    clearDraft();
     onDone();
   }
 
@@ -76,6 +118,17 @@ function LiteTolerance({ onDone }: { onDone: () => void }) {
 
   return (
     <Card className="space-y-5">
+      {draft && !resumed && (
+        <DraftResume
+          updatedAt={draft.updatedAt}
+          preview={
+            draft.data.fear ||
+            `${formatTime(draft.data.duration - draft.data.remaining)} / ${formatTime(draft.data.duration)}`
+          }
+          onResume={resumeDraft}
+          onDiscard={clearDraft}
+        />
+      )}
       <SectionTitle
         title="計時微挑戰"
         subtitle="選一個時間長度，帶著不適感專注完成"
@@ -83,6 +136,14 @@ function LiteTolerance({ onDone }: { onDone: () => void }) {
       <TheoryNote framework="辯證行為治療 DBT・痛苦耐受">
         源自 Marsha Linehan 發展的辯證行為治療（DBT）中的「痛苦耐受技巧」（Distress Tolerance）：與其逃避或壓抑不舒服的感覺，練習「帶著它」撐過一小段時間，能讓大腦逐漸學會不適感是可以承受、會自然消退的，長期能提升情緒耐受度與衝動控制力。
       </TheoryNote>
+      <EventPicker
+        value={fear}
+        onChange={setFear}
+        logs={logs}
+        label="這次面對的是什麼？（選填）"
+        placeholder="例如：明天要跟主管報告"
+      />
+
       <div className="flex gap-2">
         <GhostButton active={duration === 180} onClick={() => selectDuration(180)}>
           3 分鐘
@@ -144,10 +205,12 @@ function LiteTolerance({ onDone }: { onDone: () => void }) {
         ))}
       </div>
 
-      {finished && (
+      {elapsed > 0 && (
         <>
           <div className="rounded-xl bg-amber-50 dark:bg-amber-500/10 border border-amber-200 dark:border-amber-500/30 p-3 text-sm text-amber-700 dark:text-amber-300">
-            做得好！你剛剛帶著不適感撐過了 {formatTime(duration)}，這正是情緒耐受力被訓練的時刻。
+            {finished
+              ? `做得好！你剛剛帶著不適感撐過了 ${formatTime(duration)}，這正是情緒耐受力被訓練的時刻。`
+              : `你已經撐了 ${formatTime(elapsed)}。想繼續就按繼續；現在停下也可以打卡——撐不完不是失敗，「撐到哪裡會想停」本身就是值得記下來的資料。`}
           </div>
           <ImplementationIntention
             situation={ifSituation}
@@ -160,8 +223,11 @@ function LiteTolerance({ onDone }: { onDone: () => void }) {
         </>
       )}
 
-      <PrimaryButton onClick={handleSubmit} disabled={!finished} className="w-full">
-        完成打卡
+      {/* Savable from the moment anything has been endured. Requiring the
+          timer to run out meant an abandoned challenge left no trace at all -
+          yet where someone stops is often the more informative number. */}
+      <PrimaryButton onClick={handleSubmit} disabled={elapsed === 0} className="w-full">
+        {finished ? "完成打卡" : elapsed > 0 ? "先記錄到這裡" : "完成打卡"}
       </PrimaryButton>
     </Card>
   );
@@ -171,11 +237,21 @@ function ProTolerance({ onDone }: { onDone: () => void }) {
   const { settings } = useSettings();
   const { add } = useModuleLogs();
   const [fear, setFear] = useState("");
+  // Only the typed description needs keeping: the generated plan is written
+  // to the log the moment it comes back, so it is already safe.
+  const { draft, save: saveDraft, clear: clearDraft, dismiss: dismissDraft } =
+    useDraft<{ fear: string }>("tolerance-pro");
+  const [resumed, setResumed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [plan, setPlan] = useState<{ step: number; title: string; description: string }[] | null>(
     null,
   );
+
+  useEffect(() => {
+    if (!fear.trim() || plan) return;
+    saveDraft({ fear });
+  }, [fear, plan, saveDraft]);
 
   async function submit() {
     if (!fear.trim() || loading) return;
@@ -184,6 +260,7 @@ function ProTolerance({ onDone }: { onDone: () => void }) {
     try {
       const p = await planMicroExposure(settings, fear);
       setPlan(p);
+      clearDraft();
       add({
         type: "tolerance",
         id: uid(),
@@ -209,6 +286,18 @@ function ProTolerance({ onDone }: { onDone: () => void }) {
         title="AI 階梯式自願不適計畫"
         subtitle="描述一個你想克服的害怕情境，AI 會規劃 5 階的微型暴露任務"
       />
+      {draft && !resumed && (
+        <DraftResume
+          updatedAt={draft.updatedAt}
+          preview={draft.data.fear}
+          onResume={() => {
+            setFear(draft.data.fear);
+            setResumed(true);
+            dismissDraft();
+          }}
+          onDiscard={clearDraft}
+        />
+      )}
       <textarea
         value={fear}
         onChange={(e) => setFear(e.target.value)}

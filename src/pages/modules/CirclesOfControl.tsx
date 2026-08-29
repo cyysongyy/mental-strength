@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, PrimaryButton, SectionTitle } from "../../components/Card";
 import ModeBadge, { NeedsApiKeyNotice } from "../../components/ModeBadge";
 import { TheoryNote } from "../../components/TheoryNote";
-import { uid, useModuleLogs, useSettings } from "../../lib/storage";
+import { uid, useDraft, useModuleLogs, useSettings } from "../../lib/storage";
 import { decomposeCircles, hasActiveApiKey } from "../../lib/ai";
+import { DraftResume } from "../../components/DraftResume";
 import { MODULE_META, type CircleItem, type CircleZone } from "../../types";
 
 const ZONES: { id: CircleZone; label: string; hint: string; color: string }[] = [
@@ -24,6 +25,17 @@ function LiteCircles({ onDone }: { onDone: () => void }) {
   const [dragId, setDragId] = useState<string | null>(null);
   const [showDissolve, setShowDissolve] = useState(false);
   const [submitted, setSubmitted] = useState(false);
+  const { draft, save: saveDraft, clear: clearDraft, dismiss: dismissDraft } =
+    useDraft<{ items: CircleItem[]; input: string }>("circles");
+  const [resumed, setResumed] = useState(false);
+
+  // Listing worries and sorting them is slow, deliberate work - losing a
+  // half-sorted board to a closed tab is exactly the case drafts exist for.
+  useEffect(() => {
+    if (submitted) return;
+    if (items.length === 0 && !input.trim()) return;
+    saveDraft({ items, input });
+  }, [submitted, items, input, saveDraft]);
 
   function addItem() {
     if (!input.trim()) return;
@@ -60,6 +72,7 @@ function LiteCircles({ onDone }: { onDone: () => void }) {
       items,
       mode: "lite",
     });
+    clearDraft();
     setSubmitted(true);
   }
 
@@ -96,6 +109,20 @@ function LiteCircles({ onDone }: { onDone: () => void }) {
             🌬️ {DISSOLVE_TIP}
           </div>
         </div>
+      )}
+
+      {draft && !resumed && (
+        <DraftResume
+          updatedAt={draft.updatedAt}
+          preview={draft.data.items.map((i) => i.text).join("、") || draft.data.input}
+          onResume={() => {
+            setItems(draft.data.items);
+            setInput(draft.data.input);
+            setResumed(true);
+            dismissDraft();
+          }}
+          onDiscard={clearDraft}
+        />
       )}
 
       <Card className="space-y-3">
@@ -181,6 +208,11 @@ function ProCircles({ onDone }: { onDone: () => void }) {
   const { settings } = useSettings();
   const { add } = useModuleLogs();
   const [text, setText] = useState("");
+  // The breakdown itself is logged as soon as it returns, so only the typed
+  // description is at risk of being lost.
+  const { draft, save: saveDraft, clear: clearDraft, dismiss: dismissDraft } =
+    useDraft<{ text: string }>("circles-pro");
+  const [resumed, setResumed] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [result, setResult] = useState<{
@@ -189,6 +221,11 @@ function ProCircles({ onDone }: { onDone: () => void }) {
     actions: string[];
   } | null>(null);
 
+  useEffect(() => {
+    if (!text.trim() || result) return;
+    saveDraft({ text });
+  }, [text, result, saveDraft]);
+
   async function submit() {
     if (!text.trim() || loading) return;
     setLoading(true);
@@ -196,6 +233,7 @@ function ProCircles({ onDone }: { onDone: () => void }) {
     try {
       const r = await decomposeCircles(settings, text);
       setResult(r);
+      clearDraft();
       add({
         type: "circles",
         id: uid(),
@@ -219,6 +257,18 @@ function ProCircles({ onDone }: { onDone: () => void }) {
         title="AI 圈層語意拆解器"
         subtitle="描述一件讓你煩心的複雜事件，AI 會拆解出可控與不可控的要素。"
       />
+      {draft && !resumed && (
+        <DraftResume
+          updatedAt={draft.updatedAt}
+          preview={draft.data.text}
+          onResume={() => {
+            setText(draft.data.text);
+            setResumed(true);
+            dismissDraft();
+          }}
+          onDiscard={clearDraft}
+        />
+      )}
       <textarea
         value={text}
         onChange={(e) => setText(e.target.value)}

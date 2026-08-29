@@ -125,7 +125,12 @@ function fromModuleLog(log: ModuleLogEntry): RecordItem {
   }
 
   if (log.type === "tolerance") {
-    const minutes = Math.round(log.durationSec / 60);
+    // Rounding to whole minutes turned a 40-second attempt into "0 分鐘".
+    // Now that a challenge can be saved before the timer runs out, the
+    // seconds are the interesting part.
+    const m = Math.floor(log.durationSec / 60);
+    const sec = log.durationSec % 60;
+    const held = m > 0 ? (sec > 0 ? `${m} 分 ${sec} 秒` : `${m} 分鐘`) : `${sec} 秒`;
     return {
       ...base,
       summary: log.fear || "（未填寫）",
@@ -133,7 +138,7 @@ function fromModuleLog(log: ModuleLogEntry): RecordItem {
         { label: "面對的不適", value: log.fear },
         {
           label: "計時挑戰",
-          value: `${minutes} 分鐘 ・ ${log.completed ? "有完成" : "未完成"}`,
+          value: `撐了 ${held} ・ ${log.completed ? "完整撐完" : "中途停下"}`,
         },
         {
           label: "微型暴露階梯",

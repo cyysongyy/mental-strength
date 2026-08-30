@@ -1,0 +1,41 @@
+{
+  "id": "./",
+  "name": "心理肌肉鍛鍊 Mental Muscle Training",
+  "short_name": "心理肌肉",
+  "description": "以事件為單位的心理素質訓練：每日快測、四大訓練模組，以及會記住你的個人資料庫。",
+  "lang": "zh-Hant",
+  "dir": "ltr",
+  "start_url": "./#/",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f6f7fb",
+  "theme_color": "#7c3aed",
+  "categories": ["health", "lifestyle"],
+  "icons": [
+    { "src": "./icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "./icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "./icons/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    {
+      "name": "立刻穩下來",
+      "short_name": "SOS",
+      "description": "感受與能量：現在就讓自己穩下來",
+      "url": "./#/sos",
+      "icons": [{ "src": "./icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "今日快測",
+      "short_name": "快測",
+      "url": "./#/",
+      "icons": [{ "src": "./icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "找過去的紀錄",
+      "short_name": "紀錄",
+      "url": "./#/records",
+      "icons": [{ "src": "./icons/icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

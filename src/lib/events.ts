@@ -1,4 +1,4 @@
-import type { ModuleId } from "../types";
+import type { LogSource } from "../types";
 import { textSimilarity, type MemoryItem } from "./memory";
 
 export type ThemeId = "work" | "relationship" | "selfworth" | "future" | "body" | "other";
@@ -56,7 +56,7 @@ export interface EventThread {
   occurrences: MemoryItem[];
   firstAt: number;
   lastAt: number;
-  modules: ModuleId[];
+  modules: LogSource[];
   latestAnswer: string;
   latestPlan?: string;
   /** Average drop in distress across rated practices, if any were rated. */

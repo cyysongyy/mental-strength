@@ -1,4 +1,4 @@
-import type { ModuleId, ModuleLogEntry } from "../types";
+import type { LogSource, ModuleLogEntry } from "../types";
 
 /**
  * One past problem and the answer that resolved it, derived from a saved
@@ -9,7 +9,7 @@ import type { ModuleId, ModuleLogEntry } from "../types";
 export interface MemoryItem {
   id: string;
   timestamp: number;
-  type: ModuleId;
+  type: LogSource;
   problem: string;
   answer: string;
   plan?: string;
@@ -30,9 +30,21 @@ function toMemory(log: ModuleLogEntry): MemoryItem | null {
   const base = {
     id: log.id,
     timestamp: log.timestamp,
-    before: log.intensity?.before,
-    after: log.intensity?.after,
+    // Imported 鬆弛感 sessions carry no before/after rating - that scale is
+    // this app's, and inventing one for them would corrupt the averages.
+    before: log.type === "zen" ? undefined : log.intensity?.before,
+    after: log.type === "zen" ? undefined : log.intensity?.after,
   };
+
+  if (log.type === "zen") {
+    const problem = [log.situation, log.emotions.join("、")].filter(Boolean).join(" — ");
+    // The reworked line the session arrived at, in the order the flow builds
+    // them: the label reframe is the sharpest, the rewritten script next.
+    const answer =
+      log.label.reframe || log.script.rewritten || log.relation.respond || log.summary;
+    if (!problem || !answer) return null;
+    return { ...base, type: "zen", problem, answer, plan: log.external.boundary };
+  }
 
   if (log.type === "reframe") {
     const problem = [log.trigger, log.automaticThought].filter(Boolean).join(" — ");

@@ -1,8 +1,8 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { User } from "@supabase/supabase-js";
 import { Card, GhostButton, PrimaryButton, SectionTitle } from "../components/Card";
 import { LeafAccent } from "../components/Illustrations";
-import { SYNCED_KEYS, useCheckIns, useSettings } from "../lib/storage";
+import { SYNCED_KEYS, useCheckIns, useModuleLogs, useSettings } from "../lib/storage";
 import { computeStreak } from "../lib/badges";
 import { PROVIDERS } from "../lib/ai";
 import {
@@ -19,6 +19,7 @@ import {
 } from "../lib/supabase";
 import { CrisisLink } from "../components/CrisisSupport";
 import { FONT_SCALES } from "../lib/fontScale";
+import { ZEN_APP_URL, readZenSession, zenHasContent } from "../lib/zenImport";
 import { NOT_MEDICAL_DISCLAIMER } from "../lib/safety";
 import type { AIProvider } from "../types";
 
@@ -344,6 +345,81 @@ function FontScaleCard({
   );
 }
 
+/**
+ * 鬆弛感 (zen-strength-reflection) is a separate app of the same author's,
+ * served from the same origin - so its session is readable here directly.
+ * That app keeps only its latest session and overwrites it on the next run,
+ * so anything not brought over is eventually lost; this card exists to give
+ * those sessions the same permanence as everything else here.
+ */
+function ZenImportCard() {
+  const { items: logs, add } = useModuleLogs();
+  const [message, setMessage] = useState("");
+
+  const session = useMemo(() => {
+    const s = readZenSession();
+    return s && zenHasContent(s) ? s : null;
+  }, []);
+
+  if (!session) return null;
+
+  // The session keeps its own id, which is what makes a second import a
+  // no-op rather than a duplicate row.
+  const alreadyImported = logs.some((l) => l.id === session.id);
+
+  function handleImport() {
+    if (!session || alreadyImported) return;
+    add({ type: "zen", ...session });
+    setMessage("已匯入，可以在「完整紀錄」裡找到");
+  }
+
+  return (
+    <Card className="space-y-3">
+      <SectionTitle
+        title="🪷 從「鬆弛感」匯入"
+        subtitle="偵測到你在鬆弛感做過一次手記。那個 App 只留最後一次，匯入後就會永久保存在這裡"
+      />
+      <div className="rounded-xl border border-lime-200 dark:border-lime-500/30 bg-lime-50 dark:bg-lime-500/10 p-3 space-y-1">
+        <p className="text-[11px] text-lime-700/80 dark:text-lime-300/80">
+          {new Date(session.timestamp).toLocaleString("zh-TW", {
+            year: "numeric",
+            month: "2-digit",
+            day: "2-digit",
+            hour: "2-digit",
+            minute: "2-digit",
+          })}
+        </p>
+        <p className="text-sm text-slate-800 dark:text-slate-100 line-clamp-3">
+          {session.situation || session.label.reframe || "（未填寫事件）"}
+        </p>
+        {session.emotions.length > 0 && (
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            {session.emotions.join("、")}
+          </p>
+        )}
+      </div>
+      {alreadyImported ? (
+        <p className="text-sm text-slate-500 dark:text-slate-400">
+          這一筆已經匯入過了。到鬆弛感再做一次新的，這裡就會出現新的可匯入紀錄。
+        </p>
+      ) : (
+        <PrimaryButton onClick={handleImport} className="w-full">
+          匯入這一筆手記
+        </PrimaryButton>
+      )}
+      {message && <p className="text-sm text-emerald-600 dark:text-emerald-400">{message}</p>}
+      <a
+        href={ZEN_APP_URL}
+        target="_blank"
+        rel="noreferrer"
+        className="block text-xs text-violet-500 dark:text-violet-400 underline underline-offset-2"
+      >
+        開啟鬆弛感 →
+      </a>
+    </Card>
+  );
+}
+
 function BuildStamp() {
   const builtAt = new Date(__BUILD_TIME__);
   const builtAtLabel = Number.isNaN(builtAt.getTime())
@@ -425,6 +501,8 @@ export default function Settings() {
           </p>
         </div>
       </Card>
+
+      <ZenImportCard />
 
       <FontScaleCard settings={settings} update={update} />
 

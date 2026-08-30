@@ -20,6 +20,7 @@ import {
 import { CrisisLink } from "../components/CrisisSupport";
 import { FONT_SCALES } from "../lib/fontScale";
 import { ZEN_APP_URL, zenImportStatus } from "../lib/zenImport";
+import { resetServiceWorker } from "../lib/pwa";
 import { NOT_MEDICAL_DISCLAIMER } from "../lib/safety";
 import type { AIProvider } from "../types";
 
@@ -497,6 +498,20 @@ function BuildStamp() {
         className="text-xs text-violet-500 dark:text-violet-400 underline underline-offset-2"
       >
         重新載入最新版本
+      </button>
+      {/* The heavier hammer. This app has already spent days looking broken
+          because of a stale cache, and now that it installs offline there is
+          a second layer that can go stale - so there is a way out that does
+          not involve digging through browser settings. It clears caches
+          only; nothing the person has written is touched. */}
+      <button
+        type="button"
+        onClick={() => {
+          if (confirm("清除離線快取並重新載入？你的紀錄不會被刪除。")) resetServiceWorker();
+        }}
+        className="block mx-auto text-xs text-slate-400 dark:text-slate-500 underline underline-offset-2"
+      >
+        還是不對？清除離線快取
       </button>
     </div>
   );

@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <!-- The app's own mark: the heart the nav already uses for 練習, with the
+       sprout that runs through the check-in sliders and the page headers. -->
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#8b5cf6"/>
+      <stop offset="1" stop-color="#d946ef"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" fill="url(#bg)"/>
+  <g transform="translate(256 268)">
+    <path d="M0,-58 C-32,-112 -118,-88 -118,-20 C-118,52 0,132 0,132 C0,132 118,52 118,-20 C118,-88 32,-112 0,-58 Z"
+          fill="#ffffff" opacity="0.96"/>
+    <g transform="translate(0 14)">
+      <path d="M0,58 L0,-24" stroke="#65a30d" stroke-width="13" stroke-linecap="round"/>
+      <path d="M0,6 C-34,6 -56,-22 -50,-56 C-10,-56 6,-28 0,6 Z" fill="#84cc16"/>
+      <path d="M0,28 C34,28 56,0 50,-34 C10,-34 -6,-6 0,28 Z" fill="#a3e635"/>
+    </g>
+  </g>
+</svg>

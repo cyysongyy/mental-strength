@@ -5,7 +5,7 @@ import { LeafAccent } from "../components/Illustrations";
 import { useModuleLogs } from "../lib/storage";
 import { buildMemories, searchMemories } from "../lib/memory";
 import { THEME_META, buildEventThreads, themeStats, type ThemeId } from "../lib/events";
-import { MODULE_META } from "../types";
+import { SOURCE_META } from "../types";
 
 function daysBetween(a: number, b: number) {
   return Math.round(Math.abs(a - b) / 86400000);
@@ -158,7 +158,7 @@ export default function Memory() {
                     {repeated && (
                       <p className="text-xs text-slate-400">
                         第一次到最近一次相隔 {daysBetween(t.firstAt, t.lastAt)} 天 ・ 用過{" "}
-                        {t.modules.map((m) => MODULE_META[m].name).join("、")}
+                        {t.modules.map((m) => SOURCE_META[m].name).join("、")}
                       </p>
                     )}
 
@@ -212,7 +212,7 @@ export default function Memory() {
                         {t.occurrences.map((o) => (
                           <div key={o.id} className="pt-2">
                             <p className="text-[11px] text-slate-400">
-                              {MODULE_META[o.type].icon} {MODULE_META[o.type].name} ・{" "}
+                              {SOURCE_META[o.type].icon} {SOURCE_META[o.type].name} ・{" "}
                               {new Date(o.timestamp).toLocaleDateString("zh-TW")}
                             </p>
                             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">

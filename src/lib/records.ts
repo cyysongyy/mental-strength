@@ -2,9 +2,10 @@ import { DISTORTIONS } from "./distortions";
 import { TOUGHNESS_DIMENSIONS, TOUGHNESS_DIMENSION_META } from "./toughness";
 import {
   MODULE_META,
+  SOURCE_META,
   type CheckIn,
   type CircleZone,
-  type ModuleId,
+  type LogSource,
   type ModuleLogEntry,
   type ToughnessEntry,
 } from "../types";
@@ -20,7 +21,7 @@ import {
  * nothing.
  */
 
-export type RecordKind = ModuleId | "checkin" | "toughness";
+export type RecordKind = LogSource | "checkin" | "toughness";
 
 export interface RecordDetail {
   label: string;
@@ -65,15 +66,63 @@ function nonEmpty(details: RecordDetail[]): RecordDetail[] {
 }
 
 function fromModuleLog(log: ModuleLogEntry): RecordItem {
-  const meta = MODULE_META[log.type];
+  const meta = SOURCE_META[log.type];
   const base = {
     id: log.id,
     timestamp: log.timestamp,
     kind: log.type,
     icon: meta.icon,
     kindLabel: meta.name,
-    mode: log.mode,
+    // Imported 鬆弛感 sessions have no Lite/Pro distinction - that is this
+    // app's concept, not theirs.
+    mode: log.type === "zen" ? undefined : log.mode,
   };
+
+  if (log.type === "zen") {
+    const balance = (a: number, b: number, aLabel: string, bLabel: string) =>
+      `${aLabel} ${a} ／ ${bLabel} ${b}`;
+    return {
+      ...base,
+      summary: log.situation || log.label.reframe || "（鬆弛感手記）",
+      details: nonEmpty([
+        { label: "事件", value: log.situation },
+        { label: "情緒", value: log.emotions.join("、") },
+        { label: "身體感受", value: log.body },
+        {
+          label: "定位",
+          value: balance(log.locate.inner, log.locate.outer, "內在平和", "外部從容"),
+        },
+        { label: "內在原型", value: log.locate.archetype },
+        { label: "舊劇本", value: log.script.chosen },
+        { label: "改寫後的劇本", value: log.script.rewritten, emphasis: true },
+        {
+          label: "角色能量",
+          value: balance(log.roles.mother, log.roles.father, "母親（感性）", "父親（規則）"),
+        },
+        { label: "當下的感受", value: log.roles.feel },
+        { label: "行為背後真正想要的", value: log.roles.aim },
+        { label: "刺激（客觀發生了什麼）", value: log.language.stim },
+        { label: "情緒", value: log.language.emo },
+        { label: "念頭", value: log.language.thought },
+        { label: "給自己的肯定", value: log.language.praise },
+        { label: "被貼上的標籤", value: log.label.label },
+        { label: "標籤來自誰", value: log.label.source },
+        { label: "對方的目的", value: log.label.purpose },
+        { label: "撕掉標籤後的說法", value: log.label.reframe, emphasis: true },
+        { label: "我真實的需求", value: log.relation.need },
+        { label: "我想表達的", value: log.relation.share },
+        { label: "回應的方式", value: log.relation.respond },
+        { label: "從逆境長出什麼", value: log.external.anti },
+        { label: "這次的錯誤是什麼數據", value: log.external.mistake },
+        {
+          label: "油門與剎車",
+          value: balance(log.external.desire, log.external.reason, "慾望", "理性"),
+        },
+        { label: "設下的界限", value: log.external.boundary },
+        { label: "鬆弛小結", value: log.summary, emphasis: true },
+      ]),
+    };
+  }
 
   if (log.type === "reframe") {
     return {
@@ -223,6 +272,7 @@ export const RECORD_KIND_LABELS: { id: RecordKind | "all"; label: string; icon: 
   { id: "circles", label: MODULE_META.circles.name, icon: MODULE_META.circles.icon },
   { id: "tolerance", label: MODULE_META.tolerance.name, icon: MODULE_META.tolerance.icon },
   { id: "sos", label: MODULE_META.sos.name, icon: MODULE_META.sos.icon },
+  { id: "zen", label: SOURCE_META.zen.name, icon: SOURCE_META.zen.icon },
   { id: "checkin", label: "每日快測", icon: "📝" },
   { id: "toughness", label: "4Cs 測驗", icon: "🧭" },
 ];

@@ -242,6 +242,15 @@ function summarizeLogsForAI(
         return { ...base, itemsCount: l.items.length, aiBreakdown: l.aiBreakdown };
       if (l.type === "tolerance")
         return { ...base, fear: l.fear, completed: l.completed, aiPlan: l.aiPlan };
+      if (l.type === "zen")
+        return {
+          ...base,
+          situation: l.situation,
+          emotions: l.emotions,
+          archetype: l.locate.archetype,
+          reframe: l.label.reframe,
+          rewrittenScript: l.script.rewritten,
+        };
       return { ...base, context: l.context };
     }),
     toughnessScores: latestToughness

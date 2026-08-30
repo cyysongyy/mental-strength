@@ -1,4 +1,4 @@
-import { MODULE_META } from "../types";
+import { SOURCE_META } from "../types";
 import type { ScoredMemory } from "../lib/memory";
 
 /**
@@ -26,7 +26,7 @@ export function MemoryHints({
       {matches.map(({ memory }) => (
         <div key={memory.id} className="space-y-1.5">
           <p className="text-[11px] text-amber-600/80 dark:text-amber-400/80">
-            {MODULE_META[memory.type].icon} {MODULE_META[memory.type].name} ・{" "}
+            {SOURCE_META[memory.type].icon} {SOURCE_META[memory.type].name} ・{" "}
             {new Date(memory.timestamp).toLocaleDateString("zh-TW")}
           </p>
           <p className="text-xs text-slate-500 dark:text-slate-400 line-clamp-2">

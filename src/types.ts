@@ -30,6 +30,27 @@ export const MODULE_META: Record<
   },
 };
 
+/**
+ * Where a saved record came from. Wider than ModuleId because 鬆弛感
+ * (zen-strength-reflection) is a separate app whose sessions can be imported
+ * here - it is a real source of records, but not a module you can navigate
+ * to, so it stays out of ModuleId and the module grids.
+ */
+export type LogSource = ModuleId | "zen";
+
+export const SOURCE_META: Record<
+  LogSource,
+  { name: string; short: string; icon: string; color: string }
+> = {
+  ...MODULE_META,
+  zen: {
+    name: "鬆弛感手記",
+    short: "從「鬆弛感」匯入的內在重建",
+    icon: "🪷",
+    color: "from-lime-600 to-emerald-600",
+  },
+};
+
 export const MODULE_ROUTES: Record<ModuleId, string> = {
   reframe: "/modules/reframe",
   circles: "/modules/circles",
@@ -114,11 +135,44 @@ export interface SOSEntry {
   intensity?: IntensityRating;
 }
 
+/**
+ * One 鬆弛感 session, imported from the separate zen-strength-reflection app.
+ * Both apps are served from cyysongyy.github.io, so they share an origin and
+ * therefore a localStorage - the import reads that app's key directly rather
+ * than going through a file or a server.
+ *
+ * Every field is optional-shaped (empty strings, empty arrays) because it is
+ * data written by another app: a session abandoned partway, or a future
+ * version of that app, must not be able to crash this one.
+ */
+export interface ZenEntry {
+  id: string;
+  timestamp: number;
+  situation: string;
+  emotions: string[];
+  body: string;
+  locate: { inner: number; outer: number; archetype: string };
+  script: { chosen: string; rewritten: string };
+  roles: { mother: number; father: number; feel: string; aim: string };
+  language: { stim: string; emo: string; thought: string; praise: string };
+  label: { label: string; source: string; purpose: string; reframe: string };
+  relation: { need: string; share: string; respond: string };
+  external: {
+    anti: string;
+    mistake: string;
+    desire: number;
+    reason: number;
+    boundary: string;
+  };
+  summary: string;
+}
+
 export type ModuleLogEntry =
   | ({ type: "reframe" } & ReframeEntry)
   | ({ type: "circles" } & CirclesEntry)
   | ({ type: "tolerance" } & ToleranceEntry)
-  | ({ type: "sos" } & SOSEntry);
+  | ({ type: "sos" } & SOSEntry)
+  | ({ type: "zen" } & ZenEntry);
 
 export interface BadgeDef {
   id: string;

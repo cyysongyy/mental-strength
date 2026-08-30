@@ -363,54 +363,78 @@ function ZenImportCard() {
   const [message, setMessage] = useState("");
 
   const found = useMemo(() => zenImportStatus(), []);
-  const entry = found.status === "ready" ? found.entry : null;
+  const entries = found.status === "ready" ? found.entries : [];
 
-  // The session keeps its own id, which is what makes a second import a
-  // no-op rather than a duplicate row.
-  const alreadyImported = entry ? logs.some((l) => l.id === entry.id) : false;
+  // Sessions keep their own ids, which is what makes a second import a no-op
+  // rather than a set of duplicate rows.
+  const importedIds = useMemo(() => new Set(logs.map((l) => l.id)), [logs]);
+  const pending = entries.filter((e) => !importedIds.has(e.id));
 
   function handleImport() {
-    if (!entry || alreadyImported) return;
-    add({ type: "zen", ...entry });
-    setMessage("已匯入，可以在「完整紀錄」裡找到");
+    if (pending.length === 0) return;
+    // Oldest first, so the training database ends up in the order the
+    // sessions actually happened.
+    for (const entry of [...pending].reverse()) add({ type: "zen", ...entry });
+    setMessage(`已匯入 ${pending.length} 筆，可以在「完整紀錄」裡找到`);
   }
 
   return (
     <Card className="space-y-3">
       <SectionTitle
         title="🪷 從「鬆弛感」匯入"
-        subtitle="鬆弛感只會留住最後一次手記，匯入後就會永久保存在這裡"
+        subtitle="把在鬆弛感做過的手記收進這裡的訓練資料庫，一起被搜尋、一起歸進事件脈絡"
       />
 
-      {entry ? (
+      {entries.length > 0 ? (
         <>
-          <div className="rounded-xl border border-lime-200 dark:border-lime-500/30 bg-lime-50 dark:bg-lime-500/10 p-3 space-y-1">
-            <p className="text-[11px] text-lime-700/80 dark:text-lime-300/80">
-              {new Date(entry.timestamp).toLocaleString("zh-TW", {
-                year: "numeric",
-                month: "2-digit",
-                day: "2-digit",
-                hour: "2-digit",
-                minute: "2-digit",
-              })}
-            </p>
-            <p className="text-sm text-slate-800 dark:text-slate-100 line-clamp-3">
-              {entry.situation || entry.label.reframe || "（未填寫事件）"}
-            </p>
-            {entry.emotions.length > 0 && (
+          <div className="space-y-2">
+            {entries.slice(0, 5).map((entry) => {
+              const done = importedIds.has(entry.id);
+              return (
+                <div
+                  key={entry.id}
+                  className={`rounded-xl border p-3 space-y-1 ${
+                    done
+                      ? "border-slate-200 dark:border-slate-700 opacity-60"
+                      : "border-lime-200 dark:border-lime-500/30 bg-lime-50 dark:bg-lime-500/10"
+                  }`}
+                >
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
+                    {new Date(entry.timestamp).toLocaleString("zh-TW", {
+                      year: "numeric",
+                      month: "2-digit",
+                      day: "2-digit",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                    {done && <span className="text-emerald-600 dark:text-emerald-400">已匯入</span>}
+                  </p>
+                  <p className="text-sm text-slate-800 dark:text-slate-100 line-clamp-2">
+                    {entry.situation || entry.label.reframe || "（未填寫事件）"}
+                  </p>
+                  {entry.emotions.length > 0 && (
+                    <p className="text-xs text-slate-500 dark:text-slate-400">
+                      {entry.emotions.join("、")}
+                    </p>
+                  )}
+                </div>
+              );
+            })}
+            {entries.length > 5 && (
               <p className="text-xs text-slate-500 dark:text-slate-400">
-                {entry.emotions.join("、")}
+                還有 {entries.length - 5} 筆沒列出來
               </p>
             )}
           </div>
-          {alreadyImported ? (
-            <p className="text-sm text-slate-500 dark:text-slate-400">
-              這一筆已經匯入過了。到鬆弛感再做一次新的，這裡就會出現新的可匯入紀錄。
-            </p>
-          ) : (
+
+          {pending.length > 0 ? (
             <PrimaryButton onClick={handleImport} className="w-full">
-              匯入這一筆手記
+              匯入 {pending.length} 筆手記
             </PrimaryButton>
+          ) : (
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              全部都匯入過了。到鬆弛感再做一次新的，這裡就會出現新的可匯入紀錄。
+            </p>
           )}
           {message && (
             <p className="text-sm text-emerald-600 dark:text-emerald-400">{message}</p>
@@ -420,7 +444,7 @@ function ZenImportCard() {
         <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-3 space-y-2">
           <p className="text-sm text-slate-600 dark:text-slate-300">
             {found.status === "empty"
-              ? "偵測到鬆弛感，但最後那一次沒有填任何內容，所以沒有東西可以匯入。"
+              ? "偵測到鬆弛感，但那些手記都沒有填任何內容，所以沒有東西可以匯入。"
               : found.status === "unreadable"
                 ? "偵測到鬆弛感的資料，但格式讀不懂——可能是那個 App 改版了。"
                 : "目前沒有偵測到鬆弛感的紀錄。"}

@@ -13,6 +13,11 @@ import type { ZenEntry } from "../types";
  * knowing, and a half-filled session is the normal case rather than the
  * exception.
  */
+/** Every session, newest last. Written by 鬆弛感 from the version that stopped
+ *  overwriting each session with the next one. */
+export const ZEN_SESSIONS_KEY = "zsb_sessions";
+/** Only the current session. Still written by that app, and the only thing
+ *  older installs of it have - so it remains the fallback. */
 export const ZEN_SESSION_KEY = "zsb_session";
 export const ZEN_APP_URL = "https://cyysongyy.github.io/zen-strength-reflection/";
 
@@ -39,11 +44,6 @@ function obj(v: unknown): Record<string, unknown> {
   return v && typeof v === "object" ? (v as Record<string, unknown>) : {};
 }
 
-export function readZenSession(): ZenEntry | null {
-  const s = zenImportStatus();
-  return s.status === "ready" ? s.entry : null;
-}
-
 /**
  * Why there is nothing to import, not just that there is nothing.
  *
@@ -57,31 +57,53 @@ export type ZenImportStatus =
   | { status: "none" }
   /** Its data is there but unreadable - a shape this build does not know. */
   | { status: "unreadable" }
-  /** A session exists, but nothing was written in it. */
-  | { status: "empty"; entry: ZenEntry }
-  | { status: "ready"; entry: ZenEntry };
+  /** Sessions exist, but none of them has anything written in it. */
+  | { status: "empty" }
+  /** Newest first. */
+  | { status: "ready"; entries: ZenEntry[] };
 
-export function zenImportStatus(): ZenImportStatus {
+function readKey(key: string): unknown | undefined {
   let raw: string | null = null;
   try {
-    raw = localStorage.getItem(ZEN_SESSION_KEY);
+    raw = localStorage.getItem(key);
   } catch {
-    return { status: "none" };
+    return undefined;
   }
-  if (!raw) return { status: "none" };
-
-  let parsed: Record<string, unknown>;
+  if (!raw) return undefined;
   try {
-    parsed = obj(JSON.parse(raw));
+    return JSON.parse(raw);
   } catch {
-    return { status: "unreadable" };
+    return null; // present but unreadable
   }
+}
 
-  const id = str(parsed.id);
-  if (!id) return { status: "unreadable" };
+export function zenImportStatus(): ZenImportStatus {
+  // Prefer the full list. The single key is what older versions of that app
+  // wrote, and is still written by current ones as the session in progress -
+  // so it is the fallback, not the source, or the newest session would be
+  // counted twice.
+  const list = readKey(ZEN_SESSIONS_KEY);
+  const single = readKey(ZEN_SESSION_KEY);
+  const raw = Array.isArray(list) ? list : single !== undefined ? [single] : [];
 
-  const entry = parse(id, parsed);
-  return zenHasContent(entry) ? { status: "ready", entry } : { status: "empty", entry };
+  if (raw.length === 0) return { status: "none" };
+  if (raw.every((r) => r === null)) return { status: "unreadable" };
+
+  const parsed: ZenEntry[] = [];
+  for (const item of raw) {
+    const record = obj(item);
+    const id = str(record.id);
+    if (!id) continue;
+    parsed.push(parse(id, record));
+  }
+  if (parsed.length === 0) return { status: "unreadable" };
+
+  const withContent = parsed
+    .filter(zenHasContent)
+    .sort((a, b) => b.timestamp - a.timestamp);
+  return withContent.length > 0
+    ? { status: "ready", entries: withContent }
+    : { status: "empty" };
 }
 
 function parse(id: string, parsed: Record<string, unknown>): ZenEntry {

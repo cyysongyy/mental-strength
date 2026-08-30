@@ -40,23 +40,51 @@ function obj(v: unknown): Record<string, unknown> {
 }
 
 export function readZenSession(): ZenEntry | null {
+  const s = zenImportStatus();
+  return s.status === "ready" ? s.entry : null;
+}
+
+/**
+ * Why there is nothing to import, not just that there is nothing.
+ *
+ * The first version of the import card rendered only when a session was
+ * found, which made "you have not used that app in this browser" look
+ * identical to "this feature has not shipped yet" - a distinction only the
+ * person looking at the screen can resolve, and they had nothing to go on.
+ */
+export type ZenImportStatus =
+  /** No 鬆弛感 data in this browser at all. */
+  | { status: "none" }
+  /** Its data is there but unreadable - a shape this build does not know. */
+  | { status: "unreadable" }
+  /** A session exists, but nothing was written in it. */
+  | { status: "empty"; entry: ZenEntry }
+  | { status: "ready"; entry: ZenEntry };
+
+export function zenImportStatus(): ZenImportStatus {
   let raw: string | null = null;
   try {
     raw = localStorage.getItem(ZEN_SESSION_KEY);
   } catch {
-    return null;
+    return { status: "none" };
   }
-  if (!raw) return null;
+  if (!raw) return { status: "none" };
 
   let parsed: Record<string, unknown>;
   try {
     parsed = obj(JSON.parse(raw));
   } catch {
-    return null;
+    return { status: "unreadable" };
   }
 
   const id = str(parsed.id);
-  if (!id) return null;
+  if (!id) return { status: "unreadable" };
+
+  const entry = parse(id, parsed);
+  return zenHasContent(entry) ? { status: "ready", entry } : { status: "empty", entry };
+}
+
+function parse(id: string, parsed: Record<string, unknown>): ZenEntry {
 
   const ev = obj(parsed.event);
   const locate = obj(parsed.locate);

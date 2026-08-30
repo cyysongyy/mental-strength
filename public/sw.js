@@ -94,7 +94,14 @@ async function handleOther(request) {
       await cachePut(request, fresh);
       return fresh;
     })
-    .catch(() => cached);
+    .catch((err) => {
+      // Rethrow rather than resolving to undefined when there is nothing
+      // cached: respondWith(undefined) surfaces as a worker TypeError on top
+      // of the network failure, and a misleading console error is the last
+      // thing this app needs the next time something goes wrong.
+      if (cached) return cached;
+      throw err;
+    });
   return cached || network;
 }
 

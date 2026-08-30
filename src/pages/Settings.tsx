@@ -19,7 +19,7 @@ import {
 } from "../lib/supabase";
 import { CrisisLink } from "../components/CrisisSupport";
 import { FONT_SCALES } from "../lib/fontScale";
-import { ZEN_APP_URL, readZenSession, zenHasContent } from "../lib/zenImport";
+import { ZEN_APP_URL, zenImportStatus } from "../lib/zenImport";
 import { NOT_MEDICAL_DISCLAIMER } from "../lib/safety";
 import type { AIProvider } from "../types";
 
@@ -351,25 +351,27 @@ function FontScaleCard({
  * That app keeps only its latest session and overwrites it on the next run,
  * so anything not brought over is eventually lost; this card exists to give
  * those sessions the same permanence as everything else here.
+ *
+ * It always renders, including when there is nothing to import. Hiding it in
+ * that case made "you have not used that app in this browser" indis-
+ * tinguishable from "this feature is not deployed yet" - and the person
+ * looking at the screen is the only one who can tell those apart, so the
+ * screen has to say which it is.
  */
 function ZenImportCard() {
   const { items: logs, add } = useModuleLogs();
   const [message, setMessage] = useState("");
 
-  const session = useMemo(() => {
-    const s = readZenSession();
-    return s && zenHasContent(s) ? s : null;
-  }, []);
-
-  if (!session) return null;
+  const found = useMemo(() => zenImportStatus(), []);
+  const entry = found.status === "ready" ? found.entry : null;
 
   // The session keeps its own id, which is what makes a second import a
   // no-op rather than a duplicate row.
-  const alreadyImported = logs.some((l) => l.id === session.id);
+  const alreadyImported = entry ? logs.some((l) => l.id === entry.id) : false;
 
   function handleImport() {
-    if (!session || alreadyImported) return;
-    add({ type: "zen", ...session });
+    if (!entry || alreadyImported) return;
+    add({ type: "zen", ...entry });
     setMessage("已匯入，可以在「完整紀錄」裡找到");
   }
 
@@ -377,37 +379,59 @@ function ZenImportCard() {
     <Card className="space-y-3">
       <SectionTitle
         title="🪷 從「鬆弛感」匯入"
-        subtitle="偵測到你在鬆弛感做過一次手記。那個 App 只留最後一次，匯入後就會永久保存在這裡"
+        subtitle="鬆弛感只會留住最後一次手記，匯入後就會永久保存在這裡"
       />
-      <div className="rounded-xl border border-lime-200 dark:border-lime-500/30 bg-lime-50 dark:bg-lime-500/10 p-3 space-y-1">
-        <p className="text-[11px] text-lime-700/80 dark:text-lime-300/80">
-          {new Date(session.timestamp).toLocaleString("zh-TW", {
-            year: "numeric",
-            month: "2-digit",
-            day: "2-digit",
-            hour: "2-digit",
-            minute: "2-digit",
-          })}
-        </p>
-        <p className="text-sm text-slate-800 dark:text-slate-100 line-clamp-3">
-          {session.situation || session.label.reframe || "（未填寫事件）"}
-        </p>
-        {session.emotions.length > 0 && (
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            {session.emotions.join("、")}
-          </p>
-        )}
-      </div>
-      {alreadyImported ? (
-        <p className="text-sm text-slate-500 dark:text-slate-400">
-          這一筆已經匯入過了。到鬆弛感再做一次新的，這裡就會出現新的可匯入紀錄。
-        </p>
+
+      {entry ? (
+        <>
+          <div className="rounded-xl border border-lime-200 dark:border-lime-500/30 bg-lime-50 dark:bg-lime-500/10 p-3 space-y-1">
+            <p className="text-[11px] text-lime-700/80 dark:text-lime-300/80">
+              {new Date(entry.timestamp).toLocaleString("zh-TW", {
+                year: "numeric",
+                month: "2-digit",
+                day: "2-digit",
+                hour: "2-digit",
+                minute: "2-digit",
+              })}
+            </p>
+            <p className="text-sm text-slate-800 dark:text-slate-100 line-clamp-3">
+              {entry.situation || entry.label.reframe || "（未填寫事件）"}
+            </p>
+            {entry.emotions.length > 0 && (
+              <p className="text-xs text-slate-500 dark:text-slate-400">
+                {entry.emotions.join("、")}
+              </p>
+            )}
+          </div>
+          {alreadyImported ? (
+            <p className="text-sm text-slate-500 dark:text-slate-400">
+              這一筆已經匯入過了。到鬆弛感再做一次新的，這裡就會出現新的可匯入紀錄。
+            </p>
+          ) : (
+            <PrimaryButton onClick={handleImport} className="w-full">
+              匯入這一筆手記
+            </PrimaryButton>
+          )}
+          {message && (
+            <p className="text-sm text-emerald-600 dark:text-emerald-400">{message}</p>
+          )}
+        </>
       ) : (
-        <PrimaryButton onClick={handleImport} className="w-full">
-          匯入這一筆手記
-        </PrimaryButton>
+        <div className="rounded-xl border border-slate-200 dark:border-slate-700 p-3 space-y-2">
+          <p className="text-sm text-slate-600 dark:text-slate-300">
+            {found.status === "empty"
+              ? "偵測到鬆弛感，但最後那一次沒有填任何內容，所以沒有東西可以匯入。"
+              : found.status === "unreadable"
+                ? "偵測到鬆弛感的資料，但格式讀不懂——可能是那個 App 改版了。"
+                : "目前沒有偵測到鬆弛感的紀錄。"}
+          </p>
+          <p className="text-xs text-slate-500 dark:text-slate-400">
+            紀錄存在瀏覽器裡，只有<b>同一個瀏覽器</b>讀得到。在別台裝置、別的瀏覽器，或用
+            App 內建瀏覽器開的，這裡都看不到。無痕視窗關掉後也不會留。
+          </p>
+        </div>
       )}
-      {message && <p className="text-sm text-emerald-600 dark:text-emerald-400">{message}</p>}
+
       <a
         href={ZEN_APP_URL}
         target="_blank"
